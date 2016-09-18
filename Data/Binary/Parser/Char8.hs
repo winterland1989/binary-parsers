@@ -59,10 +59,6 @@ takeTill :: (Char -> Bool) -> Get ByteString
 takeTill pred = W.takeTill (pred . w2c)
 {-# INLINE takeTill #-}
 
-takeTillLazy :: (Char -> Bool) -> Get L.ByteString
-takeTillLazy pred = W.takeTillLazy (pred . w2c)
-{-# INLINE takeTillLazy #-}
-
 takeWhile :: (Char -> Bool) -> Get ByteString
 takeWhile pred = W.takeWhile (pred . w2c)
 {-# INLINE takeWhile #-}
@@ -70,10 +66,6 @@ takeWhile pred = W.takeWhile (pred . w2c)
 takeWhile1 :: (Char -> Bool) -> Get ByteString
 takeWhile1 pred = W.takeWhile1 (pred . w2c)
 {-# INLINE takeWhile1 #-}
-
-takeWhileLazy :: (Char -> Bool) -> Get L.ByteString
-takeWhileLazy pred = W.takeWhileLazy (pred . w2c)
-{-# INLINE takeWhileLazy #-}
 
 skipWhile :: (Char -> Bool) -> Get ()
 skipWhile pred = W.skipWhile (pred . w2c)

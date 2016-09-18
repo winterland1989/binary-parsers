@@ -152,7 +152,7 @@ commaSeparated :: Get a -> Word8 -> Get [a]
 commaSeparated item endByte = do
   w <- BP.peek
   if w == endByte
-    then BP.skipWords 1 >> return []
+    then BP.skipN 1 >> return []
     else loop
   where
     loop = do
@@ -183,9 +183,9 @@ value :: Get Value
 value = do
   w <- BP.peek
   case w of
-    DOUBLE_QUOTE  -> BP.skipWords 1 *> (String <$> jstring_)
-    OPEN_CURLY    -> BP.skipWords 1 *> object_
-    OPEN_SQUARE   -> BP.skipWords 1 *> array_
+    DOUBLE_QUOTE  -> BP.skipN 1 *> (String <$> jstring_)
+    OPEN_CURLY    -> BP.skipN 1 *> object_
+    OPEN_SQUARE   -> BP.skipN 1 *> array_
     C_f           -> BP.string "false" *> pure (Bool False)
     C_t           -> BP.string "true" *> pure (Bool True)
     C_n           -> BP.string "null" *> pure Null
@@ -199,10 +199,10 @@ value' = do
   w <- BP.peek
   case w of
     DOUBLE_QUOTE  -> do
-                     !s <- BP.skipWords 1 *> jstring_
+                     !s <- BP.skipN 1 *> jstring_
                      return (String s)
-    OPEN_CURLY    -> BP.skipWords 1 *> object_'
-    OPEN_SQUARE   -> BP.skipWords 1 *> array_'
+    OPEN_CURLY    -> BP.skipN 1 *> object_'
+    OPEN_SQUARE   -> BP.skipN 1 *> array_'
     C_f           -> BP.string "false" *> pure (Bool False)
     C_t           -> BP.string "true" *> pure (Bool True)
     C_n           -> BP.string "null" *> pure Null

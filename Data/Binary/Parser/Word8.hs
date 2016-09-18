@@ -72,12 +72,12 @@ skip pred = do
 
 --------------------------------------------------------------------------------
 
-skipWords :: Int -> Get ()
-skipWords n = do
+skipN :: Int -> Get ()
+skipN n = do
     ensureN n
     bs <- get
     put (B.unsafeDrop n bs)
-{-# INLINE skipWords #-}
+{-# INLINE skipN #-}
 
 takeTill :: (Word8 -> Bool) -> Get ByteString
 takeTill pred = withInputChunks () (consumeUntil pred) B.concat (return . B.concat)
@@ -87,15 +87,6 @@ takeTill pred = withInputChunks () (consumeUntil pred) B.concat (return . B.conc
         in if B.null rest then Left ()
                           else Right (want, rest)
 {-# INLINE takeTill #-}
-
-takeTillLazy :: (Word8 -> Bool) -> Get L.ByteString
-takeTillLazy pred = withInputChunks () (consumeUntil pred) L.fromChunks (return . L.fromChunks)
-  where
-    consumeUntil pred _ str =
-        let (want, rest) = B.break pred str
-        in if B.null rest then Left ()
-                          else Right (want, rest)
-{-# INLINE takeTillLazy #-}
 
 takeWhile :: (Word8 -> Bool) -> Get ByteString
 takeWhile pred = withInputChunks () (consumeUntil pred) B.concat (return . B.concat)
@@ -112,31 +103,17 @@ takeWhile1 pred = do
     if B.null bs then fail "takeWhile1" else return bs
 {-# INLINE takeWhile1 #-}
 
-takeWhileLazy :: (Word8 -> Bool) -> Get L.ByteString
-takeWhileLazy pred = withInputChunks () (consumeUntil pred) L.fromChunks (return . L.fromChunks)
-  where
-    consumeUntil pred _ str =
-        let (want, rest) = B.span pred str
-        in if B.null rest then Left ()
-                          else Right (want, rest)
-{-# INLINE takeWhileLazy #-}
-
 skipWhile :: (Word8 -> Bool) -> Get ()
-skipWhile pred = void $ withInputChunks () (consumeUntil pred) B.concat (return . const B.empty)
+skipWhile pred = withInputChunks () (consumeUntil pred) (const ()) (return . const ())
   where
     consumeUntil pred _ str =
-        let (_, rest) = B.span pred str
+        let rest = B.dropWhile pred str
         in if B.null rest then Left ()
-                          else Right (B.empty , rest)
+                          else Right (undefined , rest)
 {-# INLINE skipWhile #-}
 
 skipTill :: (Word8 -> Bool) -> Get ()
-skipTill pred = void $ withInputChunks () (consumeUntil pred) B.concat (return . const B.empty)
-  where
-    consumeUntil pred _ str =
-        let (_, rest) = B.break pred str
-        in if B.null rest then Left ()
-                          else Right (B.empty, rest)
+skipTill pred = skipWhile (not . pred)
 {-# INLINE skipTill #-}
 
 skipSpaces :: Get ()

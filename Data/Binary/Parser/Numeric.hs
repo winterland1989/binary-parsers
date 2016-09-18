@@ -16,6 +16,7 @@ import qualified Data.ByteString.Lazy     as L
 import           Data.Word
 import           Data.Int
 import           Data.Bits
+import qualified Data.ByteString.Lex.Integral as LexInt
 import           Data.Scientific (Scientific(..))
 import qualified Data.Scientific as Sci
 
@@ -24,11 +25,11 @@ import qualified Data.Scientific as Sci
 --
 -- This parser does not accept a leading @\"0x\"@ string.
 hexadecimal :: (Integral a, Bits a) => Get a
-hexadecimal = B.foldl' step 0 `fmap` W.takeWhile1 W.isHexDigit
-  where
-    step a w | w >= 48 && w <= 57  = (a `shiftL` 4) .|. fromIntegral (w - 48)
-             | w >= 97             = (a `shiftL` 4) .|. fromIntegral (w - 87)
-             | otherwise           = (a `shiftL` 4) .|. fromIntegral (w - 55)
+hexadecimal = do
+    bs <- W.takeWhile1 W.isHexDigit
+    case LexInt.readHexadecimal bs of
+        Just (x, _) -> return x
+        Nothing -> fail "decimal: impossible"
 {-# SPECIALISE hexadecimal :: Get Int #-}
 {-# SPECIALISE hexadecimal :: Get Int8 #-}
 {-# SPECIALISE hexadecimal :: Get Int16 #-}
@@ -43,8 +44,11 @@ hexadecimal = B.foldl' step 0 `fmap` W.takeWhile1 W.isHexDigit
 
 -- | Parse and decode an unsigned decimal number.
 decimal :: Integral a => Get a
-decimal = B.foldl' step 0 `fmap` W.takeWhile1 W.isDigit
-  where step a w = a * 10 + fromIntegral (w - 48)
+decimal = do
+    bs <- W.takeWhile1 W.isDigit
+    case LexInt.readDecimal bs of
+        Just (x, _) -> return x
+        Nothing -> fail "decimal: impossible"
 {-# SPECIALISE decimal :: Get Int #-}
 {-# SPECIALISE decimal :: Get Int8 #-}
 {-# SPECIALISE decimal :: Get Int16 #-}
@@ -56,7 +60,6 @@ decimal = B.foldl' step 0 `fmap` W.takeWhile1 W.isDigit
 {-# SPECIALISE decimal :: Get Word16 #-}
 {-# SPECIALISE decimal :: Get Word32 #-}
 {-# SPECIALISE decimal :: Get Word64 #-}
-
 
 -- | Parse a number with an optional leading @\'+\'@ or @\'-\'@ sign
 -- character.
@@ -130,13 +133,13 @@ data SP = SP !Integer {-# UNPACK #-}!Int
 scientifically :: (Scientific -> a) -> Get a
 scientifically h = do
     sign <- W.peek
-    when (sign == plus || sign == minus) (W.skipWords 1)
+    when (sign == plus || sign == minus) (W.skipN 1)
 
     n <- decimal
 
     maybeDot <- W.peekMaybe
     SP c e <- if maybeDot == Just dot
-                    then W.skipWords 1 *> (mkFrac n <$> W.takeWhile W.isDigit)
+                    then W.skipN 1 *> (mkFrac n <$> W.takeWhile W.isDigit)
                     else pure (SP n 0)
 
     let signedCoeff | sign /= minus = c

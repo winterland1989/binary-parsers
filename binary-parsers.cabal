@@ -30,6 +30,7 @@ library
                     ,   charset
                     ,   attoparsec
                     ,   attoparsec-binary
+                    ,   bytestring-lexing
                     ,   scientific
 
     -- hs-source-dirs:      
