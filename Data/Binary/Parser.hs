@@ -22,6 +22,7 @@ module Data.Binary.Parser
     -- *
     , option
     , eitherP
+    , match
     , many'
     , some'
     , sepBy
@@ -96,6 +97,14 @@ option x p = p <|> pure x
 eitherP :: (Alternative f) => f a -> f b -> f (Either a b)
 eitherP a b = (Left <$> a) <|> (Right <$> b)
 {-# INLINE eitherP #-}
+
+-- | Return both the result of a parse and the portion of the input
+-- that was consumed while it was being parsed.
+match :: Get a -> Get (B.ByteString, a)
+match p = do
+    pos1 <- bytesRead
+    (x, pos2) <- lookAhead $ (,) <$> p <*> bytesRead
+    (,) <$> (getByteString . fromIntegral) (pos2 - pos1) <*> pure x
 
 -- | A version of 'liftM2' that is strict in the result of its first
 -- action.

@@ -3,7 +3,7 @@
 module Data.Binary.Parser.Word8 where
 
 import           Control.Monad
-import qualified Data.Binary.Get          as BG
+import           Data.Binary.Get
 import           Data.Binary.Get.Internal
 import           Data.ByteString          (ByteString)
 import qualified Data.ByteString          as B
@@ -19,9 +19,9 @@ import           Prelude                  hiding (takeWhile)
 
 peekMaybe :: Get (Maybe Word8)
 peekMaybe = do
-    bs <- get
-    if B.null bs then return Nothing
-                 else return (Just (B.unsafeHead bs))
+    e <- isEmpty
+    if e then return Nothing
+         else Just <$> peek
 {-# INLINE peekMaybe #-}
 
 peek :: Get Word8
@@ -43,8 +43,18 @@ satisfy p = do
     bs <- get
     let w = B.unsafeHead bs
     if p w then put (B.unsafeTail bs) >> return w
-              else fail ("satisfy: can't satisfy word8: " ++ show w)
+              else fail "satisfy"
 {-# INLINE satisfy #-}
+
+satisfyWith :: (Word8 -> a) -> (a -> Bool) -> Get a
+satisfyWith f p = do
+    ensureN 1
+    bs <- get
+    let w = B.unsafeHead bs
+        r = f w
+    if p r then put (B.unsafeTail bs) >> return r
+           else fail "satisfyWith"
+{-# INLINE satisfyWith #-}
 
 word8 :: Word8 -> Get ()
 word8 c = do
@@ -52,11 +62,11 @@ word8 c = do
     bs <- get
     let w = B.unsafeHead bs
     if c == w then put (B.unsafeTail bs)
-              else fail ("word8: can't match " ++ show c ++ " with " ++ show w)
+              else fail "word8"
 {-# INLINE word8 #-}
 
 anyWord8 :: Get Word8
-anyWord8 = BG.getWord8
+anyWord8 = getWord8
 {-# INLINE anyWord8 #-}
 
 skipWord8 :: (Word8 -> Bool) -> Get ()
@@ -65,34 +75,57 @@ skipWord8 p = do
     bs <- get
     let w = B.unsafeHead bs
     if p w then put (B.unsafeTail bs)
-              else fail ("skip: can't skip word8: " ++ show w)
+              else fail "skip"
 {-# INLINE skipWord8 #-}
 
 --------------------------------------------------------------------------------
 
 skipN :: Int -> Get ()
 skipN n = do
-    ensureN n
     bs <- get
-    put (B.unsafeDrop n bs)
+    let l = B.length bs
+    if l >= n then put (B.unsafeDrop n bs)
+              else put B.empty >> skip (l - n)
 {-# INLINE skipN #-}
 
 takeTill :: (Word8 -> Bool) -> Get ByteString
-takeTill p = withInputChunks () (consumeUntil p) B.concat (return . B.concat)
+takeTill p = do
+    bs <- get
+    let (want, rest) = B.break p bs
+    put rest
+    if B.null rest then B.concat . reverse <$> go [want]
+                   else return want
   where
-    consumeUntil p' _ str =
-        let (want, rest) = B.break p' str
-        in if B.null rest then Left ()
-                          else Right (want, rest)
+    go acc = do
+        bs <- get
+        let (want, rest) = B.break p bs
+            acc' = want : acc
+        put rest
+        if B.null rest
+        then do
+            e <- isEmpty
+            if e then return acc' else go acc'
+        else return acc'
 {-# INLINE takeTill #-}
 
 takeWhile :: (Word8 -> Bool) -> Get ByteString
-takeWhile p = withInputChunks () (consumeUntil p) B.concat (return . B.concat)
+takeWhile p = do
+    bs <- get
+    let (want, rest) = B.span p bs
+    put rest
+    if B.null rest then B.concat . reverse <$> go [want]
+                   else return want
   where
-    consumeUntil p' _ str =
-        let (want, rest) = B.span p' str
-        in if B.null rest then Left ()
-                          else Right (want, rest)
+    go acc = do
+        bs <- get
+        let (want, rest) = B.span p bs
+            acc' = want : acc
+        put rest
+        if B.null rest
+        then do
+            e <- isEmpty
+            if e then return acc' else go acc'
+        else return acc'
 {-# INLINE takeWhile #-}
 
 takeWhile1 :: (Word8 -> Bool) -> Get ByteString
@@ -102,12 +135,19 @@ takeWhile1 p = do
 {-# INLINE takeWhile1 #-}
 
 skipWhile :: (Word8 -> Bool) -> Get ()
-skipWhile p = withInputChunks () (consumeUntil p) (const ()) (return . const ())
+skipWhile p = do
+    bs <- get
+    let rest = B.dropWhile p bs
+    put rest
+    when (B.null rest) go
   where
-    consumeUntil p' _ str =
-        let rest = B.dropWhile p' str
-        in if B.null rest then Left ()
-                          else Right (undefined , rest)
+    go = do
+        e <- isEmpty
+        unless e $ do
+            bs <- get
+            let rest = B.dropWhile p bs
+            put rest
+            when (B.null rest) go
 {-# INLINE skipWhile #-}
 
 skipTill :: (Word8 -> Bool) -> Get ()

@@ -127,21 +127,17 @@ scientifically h = do
     sign <- W.peek
     when (sign == PLUS || sign == MINUS) (W.skipN 1)
     intPart <- decimal
-    maybeDot <- W.peekMaybe
-    sci <- if maybeDot == Just DOT
-            then do
-                fracDigits <- W.skipN 1 >> W.takeWhile W.isDigit
-                let e' = B.length fracDigits
-                    intPart' = intPart * (10 ^ B.length fracDigits)
-                    fracPart = LexInt.readDecimal_ fracDigits
-                parseE (intPart' + fracPart) e'
-            else parseE intPart 0
+    sci <- (do fracDigits <- W.word8 DOT >> W.takeWhile1 W.isDigit
+               let e' = B.length fracDigits
+                   intPart' = intPart * (10 ^ B.length fracDigits)
+                   fracPart = LexInt.readDecimal_ fracDigits
+               parseE (intPart' + fracPart) e'
+           ) <|> (pure (Sci.scientific intPart 0))
+
     if sign /= MINUS then return $! h sci else return $! h (negate sci)
   where
-    parseE c e = do
-        w <- W.peekMaybe
-        if w == Just LITTLE_E || w == Just BIG_E
-        then W.skipN 1 >> (Sci.scientific c . (subtract e) <$> signed decimal)
-        else return (Sci.scientific c (negate e))
+    parseE c e =
+        (do _ <- W.satisfy (\w -> w ==  LITTLE_E || w == BIG_E)
+            (Sci.scientific c . (subtract e) <$> signed decimal)) <|> return (Sci.scientific c (negate e))
     {-# INLINE parseE #-}
 {-# INLINE scientifically #-}

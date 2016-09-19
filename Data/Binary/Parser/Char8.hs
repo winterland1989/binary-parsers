@@ -57,13 +57,13 @@ skipTill :: (Char -> Bool) -> Get ()
 skipTill p = W.skipTill (p . w2c)
 {-# INLINE skipTill #-}
 
-stringCI :: ByteString -> Get ()
+stringCI :: ByteString -> Get ByteString
 stringCI bs = do
     let l = B.length bs
     ensureN l
-    bs' <- get
-    if B.map toLower (B.unsafeTake l bs') == B.map toLower bs
-    then put (B.unsafeDrop l bs')
+    bs' <- B.unsafeTake l <$> get
+    if B.map toLower bs' == B.map toLower bs
+    then put (B.unsafeDrop l bs') >> return bs'
     else fail ("string not match: " ++ show bs)
   where
     toLower w | w >= 65 && w <= 90 = w + 32
