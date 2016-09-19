@@ -29,7 +29,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import Data.Vector as Vector (Vector, foldl', fromList)
 import Data.Word (Word8)
-import System.Directory (getDirectoryContents)
+import System.Directory (getDirectoryContents, doesDirectoryExist)
 import System.FilePath ((</>), dropExtension)
 import qualified Data.Attoparsec.ByteString as A
 import qualified Data.Attoparsec.Lazy as L
@@ -38,7 +38,6 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.HashMap.Strict as H
-import System.Directory (doesDirectoryExist)
 import Criterion.Main
 
 #define BACKSLASH 92

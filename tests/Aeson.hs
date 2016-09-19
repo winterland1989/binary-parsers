@@ -1,11 +1,7 @@
 {-# LANGUAGE BangPatterns, CPP, OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-module AesonBP
-    (
-      aeson
-    , value'
-    ) where
+module Aeson where
 
 import Data.ByteString.Builder
   (Builder, byteString, toLazyByteString, charUtf8, word8)
@@ -18,6 +14,8 @@ import Data.Monoid (mappend, mempty)
 import Control.Applicative (liftA2)
 import Control.DeepSeq (NFData(..))
 import Control.Monad (forM)
+import Data.Attoparsec.ByteString.Char8 (Parser, char, endOfInput, scientific,
+                                         skipSpace, string)
 import Data.Bits ((.|.), shiftL)
 import Data.ByteString (ByteString)
 import Data.Char (chr)
@@ -27,25 +25,21 @@ import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import Data.Vector as Vector (Vector, foldl', fromList)
 import Data.Word (Word8)
-import System.Directory (getDirectoryContents, doesDirectoryExist)
+import System.Directory (getDirectoryContents)
 import System.FilePath ((</>), dropExtension)
+import qualified Data.Attoparsec.ByteString as A
+import qualified Data.Attoparsec.Lazy as L
 import qualified Data.Attoparsec.Zepto as Z
-import Data.Binary.Get (Get)
-import qualified Data.Binary.Parser as BP
-import qualified Data.Binary.Get as BG
-import qualified Data.Binary.Parser.Word8 as BP
-import qualified Data.Binary.Parser.Numeric as BP
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.HashMap.Strict as H
-import Criterion.Main
+import System.Directory (doesDirectoryExist)
 
 #define BACKSLASH 92
 #define CLOSE_CURLY 125
 #define CLOSE_SQUARE 93
 #define COMMA 44
-#define COLON 58
 #define DOUBLE_QUOTE 34
 #define OPEN_CURLY 123
 #define OPEN_SQUARE 91
@@ -100,7 +94,7 @@ instance NFData Value where
 -- until the Haskell value is needed.  This may improve performance if
 -- only a subset of the results of conversions are needed, but at a
 -- cost in thunk allocation.
-json :: Get Value
+json :: Parser Value
 json = json_ object_ array_
 
 -- | Parse a top-level JSON value.  This must be either an object or
@@ -109,21 +103,21 @@ json = json_ object_ array_
 -- This is a strict version of 'json' which avoids building up thunks
 -- during parsing; it performs all conversions immediately.  Prefer
 -- this version if most of the JSON data needs to be accessed.
-json' :: Get Value
+json' :: Parser Value
 json' = json_ object_' array_'
 
-json_ :: Get Value -> Get Value -> Get Value
+json_ :: Parser Value -> Parser Value -> Parser Value
 json_ obj ary = do
-  w <- BP.skipSpaces *> BP.satisfy (\w -> w == OPEN_CURLY || w == OPEN_SQUARE)
+  w <- skipSpace *> A.satisfy (\w -> w == OPEN_CURLY || w == OPEN_SQUARE)
   if w == OPEN_CURLY
     then obj
     else ary
 {-# INLINE json_ #-}
 
-object_ :: Get Value
+object_ :: Parser Value
 object_ = {-# SCC "object_" #-} Object <$> objectValues jstring value
 
-object_' :: Get Value
+object_' :: Parser Value
 object_' = {-# SCC "object_'" #-} do
   !vals <- objectValues jstring' value'
   return (Object vals)
@@ -132,39 +126,39 @@ object_' = {-# SCC "object_'" #-} do
     !s <- jstring
     return s
 
-objectValues :: Get Text -> Get Value -> Get (H.HashMap Text Value)
+objectValues :: Parser Text -> Parser Value -> Parser (H.HashMap Text Value)
 objectValues str val = do
-  BP.skipSpaces
-  let pair = liftA2 (,) (str <* BP.skipSpaces) (BP.word8 COLON *> BP.skipSpaces *> val)
+  skipSpace
+  let pair = liftA2 (,) (str <* skipSpace) (char ':' *> skipSpace *> val)
   H.fromList <$> commaSeparated pair CLOSE_CURLY
 {-# INLINE objectValues #-}
 
-array_ :: Get Value
+array_ :: Parser Value
 array_ = {-# SCC "array_" #-} Array <$> arrayValues value
 
-array_' :: Get Value
+array_' :: Parser Value
 array_' = {-# SCC "array_'" #-} do
   !vals <- arrayValues value'
   return (Array vals)
 
-commaSeparated :: Get a -> Word8 -> Get [a]
+commaSeparated :: Parser a -> Word8 -> Parser [a]
 commaSeparated item endByte = do
-  w <- BP.peek
+  w <- A.peekWord8'
   if w == endByte
-    then BP.skipN 1 >> return []
+    then A.anyWord8 >> return []
     else loop
   where
     loop = do
-      v <- item <* BP.skipSpaces
-      ch <- BP.satisfy $ \w -> w == COMMA || w == endByte
+      v <- item <* skipSpace
+      ch <- A.satisfy $ \w -> w == COMMA || w == endByte
       if ch == COMMA
-        then BP.skipSpaces >> (v:) <$> loop
+        then skipSpace >> (v:) <$> loop
         else return [v]
 {-# INLINE commaSeparated #-}
 
-arrayValues :: Get Value -> Get (Vector Value)
+arrayValues :: Parser Value -> Parser (Vector Value)
 arrayValues val = do
-  BP.skipSpaces
+  skipSpace
   Vector.fromList <$> commaSeparated val CLOSE_SQUARE
 {-# INLINE arrayValues #-}
 
@@ -178,51 +172,51 @@ arrayValues val = do
 -- unless the encoded data represents an object or an array.  JSON
 -- implementations in other languages conform to that same restriction
 -- to preserve interoperability and security.
-value :: Get Value
+value :: Parser Value
 value = do
-  w <- BP.peek
+  w <- A.peekWord8'
   case w of
-    DOUBLE_QUOTE  -> BP.skipN 1 *> (String <$> jstring_)
-    OPEN_CURLY    -> BP.skipN 1 *> object_
-    OPEN_SQUARE   -> BP.skipN 1 *> array_
-    C_f           -> BP.string "false" *> pure (Bool False)
-    C_t           -> BP.string "true" *> pure (Bool True)
-    C_n           -> BP.string "null" *> pure Null
+    DOUBLE_QUOTE  -> A.anyWord8 *> (String <$> jstring_)
+    OPEN_CURLY    -> A.anyWord8 *> object_
+    OPEN_SQUARE   -> A.anyWord8 *> array_
+    C_f           -> string "false" *> pure (Bool False)
+    C_t           -> string "true" *> pure (Bool True)
+    C_n           -> string "null" *> pure Null
     _              | w >= 48 && w <= 57 || w == 45
-                  -> Number <$> BP.scientific
+                  -> Number <$> scientific
       | otherwise -> fail "not a valid json value"
 
 -- | Strict version of 'value'. See also 'json''.
-value' :: Get Value
+value' :: Parser Value
 value' = do
-  w <- BP.peek
+  w <- A.peekWord8'
   case w of
     DOUBLE_QUOTE  -> do
-                     !s <- BP.skipN 1 *> jstring_
+                     !s <- A.anyWord8 *> jstring_
                      return (String s)
-    OPEN_CURLY    -> BP.skipN 1 *> object_'
-    OPEN_SQUARE   -> BP.skipN 1 *> array_'
-    C_f           -> BP.string "false" *> pure (Bool False)
-    C_t           -> BP.string "true" *> pure (Bool True)
-    C_n           -> BP.string "null" *> pure Null
+    OPEN_CURLY    -> A.anyWord8 *> object_'
+    OPEN_SQUARE   -> A.anyWord8 *> array_'
+    C_f           -> string "false" *> pure (Bool False)
+    C_t           -> string "true" *> pure (Bool True)
+    C_n           -> string "null" *> pure Null
     _              | w >= 48 && w <= 57 || w == 45
                   -> do
-                     !n <- BP.scientific
+                     !n <- scientific
                      return (Number n)
       | otherwise -> fail "not a valid json value"
 
 -- | Parse a quoted JSON string.
-jstring :: Get Text
-jstring = BP.word8 DOUBLE_QUOTE *> jstring_
+jstring :: Parser Text
+jstring = A.word8 DOUBLE_QUOTE *> jstring_
 
 -- | Parse a string without a leading quote.
-jstring_ :: Get Text
+jstring_ :: Parser Text
 jstring_ = {-# SCC "jstring_" #-} do
-  s <- BP.scan False $ \s c -> if s then Just False
+  s <- A.scan False $ \s c -> if s then Just False
                                    else if c == DOUBLE_QUOTE
                                         then Nothing
                                         else Just (c == BACKSLASH)
-  BP.word8 DOUBLE_QUOTE
+  _ <- A.word8 DOUBLE_QUOTE
   s1 <- if BACKSLASH `B.elem` s
         then case Z.parse unescape s of
             Right r  -> return r
@@ -283,6 +277,41 @@ hexQuad = do
     then return $! d .|. (c `shiftL` 4) .|. (b `shiftL` 8) .|. (a `shiftL` 12)
     else fail "invalid hex escape"
 
+decodeWith :: Parser Value -> (Value -> Result a) -> L.ByteString -> Maybe a
+decodeWith p to s =
+    case L.parse p s of
+      L.Done _ v -> case to v of
+                      Success a -> Just a
+                      _         -> Nothing
+      _          -> Nothing
+{-# INLINE decodeWith #-}
+
+decodeStrictWith :: Parser Value -> (Value -> Result a) -> B.ByteString
+                 -> Maybe a
+decodeStrictWith p to s =
+    case either Error to (A.parseOnly p s) of
+      Success a -> Just a
+      Error _ -> Nothing
+{-# INLINE decodeStrictWith #-}
+
+eitherDecodeWith :: Parser Value -> (Value -> Result a) -> L.ByteString
+                 -> Either String a
+eitherDecodeWith p to s =
+    case L.parse p s of
+      L.Done _ v -> case to v of
+                      Success a -> Right a
+                      Error msg -> Left msg
+      L.Fail _ _ msg -> Left msg
+{-# INLINE eitherDecodeWith #-}
+
+eitherDecodeStrictWith :: Parser Value -> (Value -> Result a) -> B.ByteString
+                       -> Either String a
+eitherDecodeStrictWith p to s =
+    case either Error to (A.parseOnly p s) of
+      Success a -> Right a
+      Error msg -> Left msg
+{-# INLINE eitherDecodeStrictWith #-}
+
 -- $lazy
 --
 -- The 'json' and 'value' parsers decouple identification from
@@ -304,23 +333,14 @@ hexQuad = do
 
 -- | Parse a top-level JSON value followed by optional whitespace and
 -- end-of-input.  See also: 'json'.
-jsonEOF :: Get Value
-jsonEOF = json <* BP.skipSpaces
+jsonEOF :: Parser Value
+jsonEOF = json <* skipSpace <* endOfInput
 
 -- | Parse a top-level JSON value followed by optional whitespace and
 -- end-of-input.  See also: 'json''.
-jsonEOF' :: Get Value
-jsonEOF' = json' <* BP.skipSpaces
+jsonEOF' :: Parser Value
+jsonEOF' = json' <* skipSpace <* endOfInput
 
 toByteString :: Builder -> ByteString
 toByteString = L.toStrict . toLazyByteString
 {-# INLINE toByteString #-}
-
-aeson :: IO Benchmark
-aeson = do
-  path <- pathTo "json-data"
-  names <- sort . filter (`notElem` [".", ".."]) <$> getDirectoryContents path
-  benches <- forM names $ \name -> do
-    bs <- B.readFile (path </> name)
-    return . bench (dropExtension name) $ nf (BP.parseOnly jsonEOF') bs
-  return $ bgroup "aeson-binary-parser" benches

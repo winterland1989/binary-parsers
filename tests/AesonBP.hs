@@ -1,11 +1,7 @@
 {-# LANGUAGE BangPatterns, CPP, OverloadedStrings #-}
 {-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
-module AesonBP
-    (
-      aeson
-    , value'
-    ) where
+module AesonBP where
 
 import Data.ByteString.Builder
   (Builder, byteString, toLazyByteString, charUtf8, word8)
@@ -27,7 +23,7 @@ import Data.Text (Text)
 import Data.Text.Encoding (decodeUtf8')
 import Data.Vector as Vector (Vector, foldl', fromList)
 import Data.Word (Word8)
-import System.Directory (getDirectoryContents, doesDirectoryExist)
+import System.Directory (getDirectoryContents)
 import System.FilePath ((</>), dropExtension)
 import qualified Data.Attoparsec.Zepto as Z
 import Data.Binary.Get (Get)
@@ -39,7 +35,8 @@ import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.HashMap.Strict as H
-import Criterion.Main
+import System.Directory (doesDirectoryExist)
+import Aeson (Value(..))
 
 #define BACKSLASH 92
 #define CLOSE_CURLY 125
@@ -75,23 +72,6 @@ type Object = H.HashMap Text Value
 
 -- | A JSON \"array\" (sequence).
 type Array = Vector Value
-
--- | A JSON value represented as a Haskell value.
-data Value = Object !Object
-           | Array !Array
-           | String !Text
-           | Number !Scientific
-           | Bool !Bool
-           | Null
-             deriving (Eq, Show)
-
-instance NFData Value where
-    rnf (Object o) = rnf o
-    rnf (Array a)  = Vector.foldl' (\x y -> rnf y `seq` x) () a
-    rnf (String s) = rnf s
-    rnf (Number n) = rnf n
-    rnf (Bool b)   = rnf b
-    rnf Null       = ()
 
 -- | Parse a top-level JSON value.  This must be either an object or
 -- an array, per RFC 4627.
@@ -315,12 +295,3 @@ jsonEOF' = json' <* BP.skipSpaces
 toByteString :: Builder -> ByteString
 toByteString = L.toStrict . toLazyByteString
 {-# INLINE toByteString #-}
-
-aeson :: IO Benchmark
-aeson = do
-  path <- pathTo "json-data"
-  names <- sort . filter (`notElem` [".", ".."]) <$> getDirectoryContents path
-  benches <- forM names $ \name -> do
-    bs <- B.readFile (path </> name)
-    return . bench (dropExtension name) $ nf (BP.parseOnly jsonEOF') bs
-  return $ bgroup "aeson-binary-parser" benches

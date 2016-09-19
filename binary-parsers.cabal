@@ -57,7 +57,7 @@ benchmark criterion
 test-suite tests
   type:           exitcode-stdio-1.0
   hs-source-dirs: tests .
-  main-is:        QC.hs
+  main-is:        Main.hs
   other-modules:  QC.ByteString
                   QC.Combinator
                   QC.Common
@@ -65,19 +65,24 @@ test-suite tests
   default-language: Haskell2010
   ghc-options: -Wall -threaded -rtsopts
 
-  build-depends:
-    base >= 4 && < 5,
-    bytestring,
-    bytestring-lexing,
-    binary,
-    deepseq >= 1.1,
-    QuickCheck >= 2.7,
-    quickcheck-unicode,
-    scientific,
-    tasty >= 0.11,
-    tasty-quickcheck >= 0.8,
-    transformers,
-    vector
+  build-depends:    base >= 4 && < 5
+                ,   deepseq
+                ,   bytestring
+                ,   bytestring-lexing
+                ,   binary
+                ,   QuickCheck >= 2.7
+                ,   quickcheck-unicode
+                ,   scientific
+                ,   tasty >= 0.11
+                ,   tasty-quickcheck >= 0.8
+                ,   tasty-hunit >= 0.8
+                ,   attoparsec
+                ,   scientific
+                ,   text
+                ,   vector
+                ,   directory
+                ,   filepath
+                ,   unordered-containers
 
   if !impl(ghc >= 8.0)
     -- Data.Semigroup && Control.Monad.Fail are available in base-4.9+
