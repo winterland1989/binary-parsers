@@ -9,221 +9,224 @@ Haskell's binary package is an excellent choice for bytestring parsing, and the 
 + easier to write `Binary` instances with comprehensive combinators.
 + reduce overall maintaining efforts.
 
-Early benchmark showed that it can even exceed attoparsec under some circumstances, please join and help!
+Early benchmark showed that it exceeds attoparsec in almost every case, please join and help!
 
 Benchmarks
 ----------
 
+Run `cabal bench` to Benchmarks.
+
 ```
 Benchmark criterion: RUNNING...
-benchmarking aeson/buffer-builder
-time                 4.294 ms   (4.238 ms .. 4.343 ms)
-                     0.999 R²   (0.997 R² .. 0.999 R²)
-mean                 4.307 ms   (4.271 ms .. 4.353 ms)
-std dev              129.2 μs   (99.46 μs .. 187.3 μs)
-variance introduced by outliers: 13% (moderately inflated)
+benchmarking aeson-attoparsec/buffer-builder
+time                 4.269 ms   (4.062 ms .. 4.379 ms)
+                     0.966 R²   (0.887 R² .. 0.999 R²)
+mean                 4.603 ms   (4.440 ms .. 5.245 ms)
+std dev              933.8 μs   (182.1 μs .. 1.937 ms)
+variance introduced by outliers: 88% (severely inflated)
 
-benchmarking aeson/dates-fract
-time                 4.135 μs   (4.096 μs .. 4.171 μs)
-                     0.999 R²   (0.999 R² .. 1.000 R²)
-mean                 4.120 μs   (4.088 μs .. 4.159 μs)
-std dev              118.9 ns   (96.69 ns .. 147.4 ns)
-variance introduced by outliers: 36% (moderately inflated)
+benchmarking aeson-attoparsec/dates-fract
+time                 4.196 μs   (4.113 μs .. 4.278 μs)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 4.160 μs   (4.111 μs .. 4.209 μs)
+std dev              168.2 ns   (141.6 ns .. 202.6 ns)
+variance introduced by outliers: 52% (severely inflated)
 
-benchmarking aeson/dates
-time                 3.917 μs   (3.879 μs .. 3.959 μs)
-                     0.999 R²   (0.999 R² .. 0.999 R²)
-mean                 3.921 μs   (3.882 μs .. 3.959 μs)
-std dev              128.4 ns   (106.1 ns .. 158.1 ns)
-variance introduced by outliers: 42% (moderately inflated)
+benchmarking aeson-attoparsec/dates
+time                 3.984 μs   (3.923 μs .. 4.085 μs)
+                     0.988 R²   (0.974 R² .. 0.998 R²)
+mean                 4.128 μs   (3.975 μs .. 4.359 μs)
+std dev              610.2 ns   (338.3 ns .. 909.1 ns)
+variance introduced by outliers: 94% (severely inflated)
 
-benchmarking aeson/example
-time                 74.65 μs   (73.77 μs .. 75.54 μs)
+benchmarking aeson-attoparsec/example
+time                 75.25 μs   (74.23 μs .. 76.25 μs)
                      0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 74.67 μs   (73.91 μs .. 75.48 μs)
-std dev              2.676 μs   (2.139 μs .. 3.817 μs)
-variance introduced by outliers: 37% (moderately inflated)
+mean                 75.29 μs   (74.70 μs .. 75.87 μs)
+std dev              2.027 μs   (1.682 μs .. 2.504 μs)
+variance introduced by outliers: 25% (moderately inflated)
 
-benchmarking aeson/geometry
-time                 3.376 ms   (3.299 ms .. 3.511 ms)
-                     0.991 R²   (0.979 R² .. 0.999 R²)
-mean                 3.358 ms   (3.317 ms .. 3.440 ms)
-std dev              173.8 μs   (108.4 μs .. 307.3 μs)
+benchmarking aeson-attoparsec/geometry
+time                 3.371 ms   (3.325 ms .. 3.419 ms)
+                     0.998 R²   (0.996 R² .. 0.999 R²)
+mean                 3.414 ms   (3.377 ms .. 3.498 ms)
+std dev              170.4 μs   (97.13 μs .. 310.1 μs)
 variance introduced by outliers: 32% (moderately inflated)
 
-benchmarking aeson/integers
-time                 294.9 μs   (291.9 μs .. 297.6 μs)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 293.2 μs   (290.6 μs .. 295.8 μs)
-std dev              8.942 μs   (7.242 μs .. 11.55 μs)
-variance introduced by outliers: 24% (moderately inflated)
+benchmarking aeson-attoparsec/integers
+time                 309.6 μs   (301.0 μs .. 325.7 μs)
+                     0.985 R²   (0.960 R² .. 0.999 R²)
+mean                 308.4 μs   (303.6 μs .. 321.6 μs)
+std dev              25.03 μs   (11.12 μs .. 49.08 μs)
+variance introduced by outliers: 70% (severely inflated)
 
-benchmarking aeson/jp10
-time                 478.3 μs   (473.0 μs .. 484.8 μs)
+benchmarking aeson-attoparsec/jp10
+time                 492.4 μs   (486.9 μs .. 498.2 μs)
                      0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 479.1 μs   (474.8 μs .. 483.9 μs)
-std dev              15.15 μs   (12.54 μs .. 20.16 μs)
-variance introduced by outliers: 24% (moderately inflated)
+mean                 495.8 μs   (491.0 μs .. 501.4 μs)
+std dev              17.61 μs   (14.58 μs .. 21.21 μs)
+variance introduced by outliers: 28% (moderately inflated)
 
-benchmarking aeson/jp100
-time                 3.008 ms   (2.956 ms .. 3.070 ms)
-                     0.998 R²   (0.997 R² .. 0.999 R²)
-mean                 3.014 ms   (2.986 ms .. 3.043 ms)
-std dev              96.15 μs   (82.52 μs .. 115.9 μs)
-variance introduced by outliers: 17% (moderately inflated)
-
-benchmarking aeson/jp50
-time                 1.570 ms   (1.551 ms .. 1.585 ms)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 1.565 ms   (1.552 ms .. 1.576 ms)
-std dev              41.49 μs   (34.51 μs .. 50.29 μs)
-variance introduced by outliers: 14% (moderately inflated)
-
-benchmarking aeson/numbers
-time                 554.9 μs   (549.5 μs .. 561.5 μs)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 558.7 μs   (554.1 μs .. 563.1 μs)
-std dev              15.41 μs   (12.85 μs .. 19.17 μs)
+benchmarking aeson-attoparsec/jp100
+time                 3.165 ms   (3.075 ms .. 3.275 ms)
+                     0.995 R²   (0.992 R² .. 0.999 R²)
+mean                 3.107 ms   (3.075 ms .. 3.144 ms)
+std dev              109.2 μs   (84.44 μs .. 153.8 μs)
 variance introduced by outliers: 19% (moderately inflated)
 
-benchmarking aeson/twitter1
-time                 24.39 μs   (23.91 μs .. 25.21 μs)
-                     0.984 R²   (0.953 R² .. 0.999 R²)
-mean                 24.86 μs   (24.28 μs .. 26.79 μs)
-std dev              3.370 μs   (824.7 ns .. 6.980 μs)
-variance introduced by outliers: 91% (severely inflated)
-
-benchmarking aeson/twitter10
-time                 177.4 μs   (175.8 μs .. 178.9 μs)
+benchmarking aeson-attoparsec/jp50
+time                 1.627 ms   (1.609 ms .. 1.643 ms)
                      0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 178.0 μs   (176.1 μs .. 180.3 μs)
-std dev              7.169 μs   (5.310 μs .. 9.978 μs)
-variance introduced by outliers: 39% (moderately inflated)
+mean                 1.638 ms   (1.621 ms .. 1.661 ms)
+std dev              66.69 μs   (51.40 μs .. 100.5 μs)
+variance introduced by outliers: 28% (moderately inflated)
 
-benchmarking aeson/twitter100
-time                 2.193 ms   (2.163 ms .. 2.222 ms)
-                     0.998 R²   (0.997 R² .. 0.999 R²)
-mean                 2.191 ms   (2.172 ms .. 2.218 ms)
-std dev              73.69 μs   (57.00 μs .. 108.8 μs)
+benchmarking aeson-attoparsec/numbers
+time                 574.5 μs   (562.7 μs .. 585.1 μs)
+                     0.997 R²   (0.996 R² .. 0.998 R²)
+mean                 566.4 μs   (559.4 μs .. 574.1 μs)
+std dev              24.21 μs   (20.78 μs .. 29.16 μs)
+variance introduced by outliers: 35% (moderately inflated)
+
+benchmarking aeson-attoparsec/twitter1
+time                 25.69 μs   (25.43 μs .. 25.97 μs)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 25.80 μs   (25.52 μs .. 26.14 μs)
+std dev              1.066 μs   (863.3 ns .. 1.361 μs)
+variance introduced by outliers: 47% (moderately inflated)
+
+benchmarking aeson-attoparsec/twitter10
+time                 181.0 μs   (177.8 μs .. 188.2 μs)
+                     0.979 R²   (0.932 R² .. 0.999 R²)
+mean                 183.0 μs   (178.7 μs .. 202.1 μs)
+std dev              25.08 μs   (6.002 μs .. 55.85 μs)
+variance introduced by outliers: 89% (severely inflated)
+
+benchmarking aeson-attoparsec/twitter100
+time                 2.272 ms   (2.232 ms .. 2.302 ms)
+                     0.998 R²   (0.998 R² .. 0.999 R²)
+mean                 2.261 ms   (2.238 ms .. 2.284 ms)
+std dev              74.10 μs   (60.45 μs .. 98.29 μs)
 variance introduced by outliers: 19% (moderately inflated)
 
-benchmarking aeson/twitter20
-time                 369.7 μs   (365.8 μs .. 374.4 μs)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 367.7 μs   (364.0 μs .. 371.9 μs)
-std dev              13.34 μs   (11.10 μs .. 16.24 μs)
-variance introduced by outliers: 31% (moderately inflated)
+benchmarking aeson-attoparsec/twitter20
+time                 377.6 μs   (373.6 μs .. 381.6 μs)
+                     0.999 R²   (0.999 R² .. 0.999 R²)
+mean                 377.1 μs   (374.6 μs .. 381.1 μs)
+std dev              10.49 μs   (8.618 μs .. 13.40 μs)
+variance introduced by outliers: 20% (moderately inflated)
 
-benchmarking aeson/twitter50
-time                 1.082 ms   (1.067 ms .. 1.099 ms)
-                     0.998 R²   (0.997 R² .. 0.999 R²)
-mean                 1.084 ms   (1.075 ms .. 1.096 ms)
-std dev              34.53 μs   (28.23 μs .. 49.61 μs)
-variance introduced by outliers: 21% (moderately inflated)
+benchmarking aeson-attoparsec/twitter50
+time                 1.110 ms   (1.100 ms .. 1.119 ms)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 1.119 ms   (1.110 ms .. 1.132 ms)
+std dev              37.68 μs   (29.28 μs .. 50.49 μs)
+variance introduced by outliers: 22% (moderately inflated)
 
 benchmarking aeson-binary-parser/buffer-builder
-time                 4.088 ms   (4.000 ms .. 4.196 ms)
-                     0.997 R²   (0.995 R² .. 0.998 R²)
-mean                 4.113 ms   (4.071 ms .. 4.163 ms)
-std dev              148.3 μs   (120.1 μs .. 185.5 μs)
-variance introduced by outliers: 17% (moderately inflated)
+time                 4.265 ms   (4.212 ms .. 4.315 ms)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 4.322 ms   (4.274 ms .. 4.379 ms)
+std dev              167.3 μs   (128.7 μs .. 243.3 μs)
+variance introduced by outliers: 20% (moderately inflated)
 
 benchmarking aeson-binary-parser/dates-fract
-time                 3.479 μs   (3.443 μs .. 3.520 μs)
-                     0.991 R²   (0.970 R² .. 1.000 R²)
-mean                 3.582 μs   (3.478 μs .. 4.044 μs)
-std dev              636.6 ns   (103.7 ns .. 1.452 μs)
-variance introduced by outliers: 96% (severely inflated)
+time                 3.651 μs   (3.541 μs .. 3.803 μs)
+                     0.993 R²   (0.986 R² .. 0.999 R²)
+mean                 3.615 μs   (3.560 μs .. 3.705 μs)
+std dev              228.5 ns   (166.5 ns .. 389.1 ns)
+variance introduced by outliers: 73% (severely inflated)
 
 benchmarking aeson-binary-parser/dates
-time                 3.373 μs   (3.348 μs .. 3.400 μs)
-                     0.999 R²   (0.999 R² .. 0.999 R²)
-mean                 3.377 μs   (3.340 μs .. 3.414 μs)
-std dev              120.1 ns   (101.4 ns .. 144.6 ns)
-variance introduced by outliers: 46% (moderately inflated)
+time                 3.501 μs   (3.459 μs .. 3.551 μs)
+                     0.989 R²   (0.971 R² .. 0.999 R²)
+mean                 3.617 μs   (3.492 μs .. 4.048 μs)
+std dev              649.1 ns   (144.2 ns .. 1.374 μs)
+variance introduced by outliers: 96% (severely inflated)
 
 benchmarking aeson-binary-parser/example
-time                 67.29 μs   (66.45 μs .. 67.95 μs)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 67.79 μs   (67.07 μs .. 68.51 μs)
-std dev              2.429 μs   (2.080 μs .. 3.046 μs)
-variance introduced by outliers: 37% (moderately inflated)
+time                 69.49 μs   (68.03 μs .. 71.10 μs)
+                     0.998 R²   (0.996 R² .. 0.999 R²)
+mean                 69.05 μs   (68.32 μs .. 69.80 μs)
+std dev              2.572 μs   (2.116 μs .. 3.180 μs)
+variance introduced by outliers: 39% (moderately inflated)
 
 benchmarking aeson-binary-parser/geometry
-time                 3.376 ms   (3.330 ms .. 3.420 ms)
-                     0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 3.413 ms   (3.387 ms .. 3.436 ms)
-std dev              82.15 μs   (64.53 μs .. 109.5 μs)
+time                 2.961 ms   (2.905 ms .. 3.006 ms)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 2.973 ms   (2.946 ms .. 3.008 ms)
+std dev              98.87 μs   (78.04 μs .. 136.5 μs)
+variance introduced by outliers: 17% (moderately inflated)
 
 benchmarking aeson-binary-parser/integers
-time                 276.9 μs   (272.0 μs .. 282.8 μs)
-                     0.996 R²   (0.991 R² .. 0.999 R²)
-mean                 275.4 μs   (272.2 μs .. 280.6 μs)
-std dev              13.53 μs   (9.199 μs .. 22.73 μs)
-variance introduced by outliers: 46% (moderately inflated)
+time                 221.6 μs   (218.6 μs .. 224.1 μs)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 219.6 μs   (217.3 μs .. 222.1 μs)
+std dev              7.507 μs   (6.322 μs .. 9.135 μs)
+variance introduced by outliers: 30% (moderately inflated)
 
 benchmarking aeson-binary-parser/jp10
-time                 513.6 μs   (500.9 μs .. 527.9 μs)
-                     0.991 R²   (0.980 R² .. 0.998 R²)
-mean                 509.4 μs   (500.8 μs .. 525.2 μs)
-std dev              37.33 μs   (23.17 μs .. 63.47 μs)
-variance introduced by outliers: 63% (severely inflated)
+time                 448.6 μs   (445.1 μs .. 452.1 μs)
+                     0.999 R²   (0.999 R² .. 1.000 R²)
+mean                 450.5 μs   (446.6 μs .. 454.4 μs)
+std dev              13.33 μs   (10.97 μs .. 16.23 μs)
+variance introduced by outliers: 22% (moderately inflated)
 
 benchmarking aeson-binary-parser/jp100
-time                 2.820 ms   (2.780 ms .. 2.857 ms)
-                     0.998 R²   (0.998 R² .. 0.999 R²)
-mean                 2.837 ms   (2.810 ms .. 2.863 ms)
-std dev              85.33 μs   (69.77 μs .. 106.9 μs)
+time                 2.820 ms   (2.772 ms .. 2.863 ms)
+                     0.998 R²   (0.997 R² .. 0.999 R²)
+mean                 2.825 ms   (2.801 ms .. 2.852 ms)
+std dev              87.00 μs   (73.63 μs .. 105.2 μs)
 variance introduced by outliers: 15% (moderately inflated)
 
 benchmarking aeson-binary-parser/jp50
-time                 1.558 ms   (1.538 ms .. 1.580 ms)
-                     0.998 R²   (0.997 R² .. 0.999 R²)
-mean                 1.561 ms   (1.547 ms .. 1.581 ms)
-std dev              52.65 μs   (40.79 μs .. 69.67 μs)
-variance introduced by outliers: 21% (moderately inflated)
+time                 1.467 ms   (1.417 ms .. 1.502 ms)
+                     0.972 R²   (0.903 R² .. 0.999 R²)
+mean                 1.546 ms   (1.466 ms .. 1.939 ms)
+std dev              494.8 μs   (45.16 μs .. 1.136 ms)
+variance introduced by outliers: 97% (severely inflated)
 
 benchmarking aeson-binary-parser/numbers
-time                 525.5 μs   (517.9 μs .. 531.2 μs)
+time                 427.2 μs   (422.3 μs .. 431.5 μs)
                      0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 523.6 μs   (519.4 μs .. 528.0 μs)
-std dev              14.20 μs   (12.08 μs .. 17.13 μs)
-variance introduced by outliers: 18% (moderately inflated)
+mean                 428.1 μs   (424.0 μs .. 434.3 μs)
+std dev              16.60 μs   (11.04 μs .. 29.03 μs)
+variance introduced by outliers: 33% (moderately inflated)
 
 benchmarking aeson-binary-parser/twitter1
-time                 24.10 μs   (22.26 μs .. 27.23 μs)
-                     0.946 R²   (0.891 R² .. 0.997 R²)
-mean                 23.28 μs   (22.60 μs .. 25.68 μs)
-std dev              3.560 μs   (1.285 μs .. 8.118 μs)
-variance introduced by outliers: 93% (severely inflated)
+time                 20.35 μs   (20.11 μs .. 20.57 μs)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 20.22 μs   (19.99 μs .. 20.44 μs)
+std dev              742.4 ns   (641.2 ns .. 890.9 ns)
+variance introduced by outliers: 43% (moderately inflated)
 
 benchmarking aeson-binary-parser/twitter10
-time                 156.8 μs   (147.0 μs .. 170.0 μs)
-                     0.946 R²   (0.916 R² .. 0.985 R²)
-mean                 164.7 μs   (153.1 μs .. 184.7 μs)
-std dev              47.13 μs   (30.32 μs .. 75.49 μs)
-variance introduced by outliers: 98% (severely inflated)
+time                 147.6 μs   (144.9 μs .. 151.2 μs)
+                     0.997 R²   (0.995 R² .. 0.999 R²)
+mean                 147.9 μs   (146.3 μs .. 149.6 μs)
+std dev              5.326 μs   (4.251 μs .. 7.077 μs)
+variance introduced by outliers: 34% (moderately inflated)
 
 benchmarking aeson-binary-parser/twitter100
-time                 2.212 ms   (2.037 ms .. 2.418 ms)
-                     0.961 R²   (0.926 R² .. 0.998 R²)
-mean                 2.065 ms   (2.022 ms .. 2.167 ms)
-std dev              209.8 μs   (74.13 μs .. 384.5 μs)
-variance introduced by outliers: 68% (severely inflated)
-
-benchmarking aeson-binary-parser/twitter20
-time                 391.9 μs   (389.4 μs .. 394.3 μs)
-                     0.999 R²   (0.999 R² .. 1.000 R²)
-mean                 393.7 μs   (391.1 μs .. 396.8 μs)
-std dev              9.649 μs   (7.781 μs .. 12.83 μs)
+time                 2.067 ms   (2.039 ms .. 2.097 ms)
+                     0.998 R²   (0.998 R² .. 0.999 R²)
+mean                 2.072 ms   (2.055 ms .. 2.091 ms)
+std dev              63.41 μs   (53.41 μs .. 77.96 μs)
 variance introduced by outliers: 17% (moderately inflated)
 
+benchmarking aeson-binary-parser/twitter20
+time                 357.3 μs   (333.3 μs .. 376.8 μs)
+                     0.986 R²   (0.982 R² .. 0.998 R²)
+mean                 334.6 μs   (328.7 μs .. 343.4 μs)
+std dev              22.46 μs   (14.79 μs .. 32.69 μs)
+variance introduced by outliers: 61% (severely inflated)
+
 benchmarking aeson-binary-parser/twitter50
-time                 1.042 ms   (1.031 ms .. 1.052 ms)
+time                 964.8 μs   (957.4 μs .. 972.3 μs)
                      0.999 R²   (0.998 R² .. 0.999 R²)
-mean                 1.041 ms   (1.033 ms .. 1.051 ms)
-std dev              30.58 μs   (25.89 μs .. 37.63 μs)
-variance introduced by outliers: 19% (moderately inflated)
+mean                 969.6 μs   (959.8 μs .. 981.7 μs)
+std dev              37.25 μs   (27.34 μs .. 58.14 μs)
+variance introduced by outliers: 28% (moderately inflated)
 
 Benchmark criterion: FINISH
 ```

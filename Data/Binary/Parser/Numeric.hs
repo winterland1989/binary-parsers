@@ -1,24 +1,25 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP #-}
 
 module Data.Binary.Parser.Numeric where
 
-import Control.Applicative
-import Control.Monad
-import qualified Data.Binary.Get          as BG
+import           Control.Applicative
+import           Control.Monad
 import           Data.Binary.Get.Internal
-import           Data.Binary.Parser
-import qualified        Data.Binary.Parser.Word8 as W
-import           Data.ByteString          (ByteString)
-import           Data.ByteString.Internal (c2w, w2c)
-import qualified Data.ByteString          as B
-import qualified Data.ByteString.Unsafe   as B
-import qualified Data.ByteString.Lazy     as L
-import           Data.Word
-import           Data.Int
+import qualified Data.Binary.Parser.Word8     as W
 import           Data.Bits
+import qualified Data.ByteString              as B
 import qualified Data.ByteString.Lex.Integral as LexInt
-import           Data.Scientific (Scientific(..))
-import qualified Data.Scientific as Sci
+import           Data.Int
+import           Data.Scientific              (Scientific (..))
+import qualified Data.Scientific              as Sci
+import           Data.Word
+
+#define  MINUS    45
+#define  PLUS     43
+#define  LITTLE_E 101
+#define  BIG_E    69
+#define  DOT      46
 
 -- | Parse and decode an unsigned hexadecimal number.  The hex digits
 -- @\'a\'@ through @\'f\'@ may be upper or lower case.
@@ -46,9 +47,7 @@ hexadecimal = do
 decimal :: Integral a => Get a
 decimal = do
     bs <- W.takeWhile1 W.isDigit
-    case LexInt.readDecimal bs of
-        Just (x, _) -> return x
-        Nothing -> fail "decimal: impossible"
+    return (LexInt.readDecimal_ bs)
 {-# SPECIALISE decimal :: Get Int #-}
 {-# SPECIALISE decimal :: Get Int8 #-}
 {-# SPECIALISE decimal :: Get Int16 #-}
@@ -64,12 +63,7 @@ decimal = do
 -- | Parse a number with an optional leading @\'+\'@ or @\'-\'@ sign
 -- character.
 signed :: Num a => Get a -> Get a
-signed p = (negate <$> (W.word8 minus *> p))
-       <|> (W.word8 plus *> p)
-       <|> p
-  where
-    minus = 45     -- '-'
-    plus  = 43     -- '+'
+signed p = p <|> (negate <$> (W.word8 MINUS *> p)) <|> (W.word8 PLUS *> p)
 {-# SPECIALISE signed :: Get Int -> Get Int #-}
 {-# SPECIALISE signed :: Get Int8 -> Get Int8 #-}
 {-# SPECIALISE signed :: Get Int16 -> Get Int16 #-}
@@ -128,33 +122,26 @@ double = scientifically Sci.toRealFloat
 scientific :: Get Scientific
 scientific = scientifically id
 
-data SP = SP !Integer {-# UNPACK #-}!Int
-
 scientifically :: (Scientific -> a) -> Get a
 scientifically h = do
     sign <- W.peek
-    when (sign == plus || sign == minus) (W.skipN 1)
-
-    n <- decimal
-
+    when (sign == PLUS || sign == MINUS) (W.skipN 1)
+    intPart <- decimal
     maybeDot <- W.peekMaybe
-    SP c e <- if maybeDot == Just dot
-                    then W.skipN 1 *> (mkFrac n <$> W.takeWhile W.isDigit)
-                    else pure (SP n 0)
-
-    let signedCoeff | sign /= minus = c
-                    | otherwise = negate c
-
-    (do W.satisfy (\ex -> ex == littleE || ex == bigE)
-        h . Sci.scientific signedCoeff . (e +) <$> signed decimal)
-        <|> (return $! h (Sci.scientific signedCoeff e))
-
+    sci <- if maybeDot == Just DOT
+            then do
+                fracDigits <- W.skipN 1 >> W.takeWhile W.isDigit
+                let e' = B.length fracDigits
+                    intPart' = intPart * (10 ^ B.length fracDigits)
+                    fracPart = LexInt.readDecimal_ fracDigits
+                parseE (intPart' + fracPart) e'
+            else parseE intPart 0
+    if sign /= MINUS then return $! h sci else return $! h (negate sci)
   where
-    minus = 45     -- '-'
-    plus  = 43     -- '+'
-    littleE = 101  -- 'e'
-    bigE    = 69   -- 'E'
-    dot = 46       -- '.'
-    mkFrac intDigits fracDigits = SP (B.foldl' step intDigits fracDigits) (negate $ B.length fracDigits)
-    step a w = a * 10 + fromIntegral (w - 48)
+    parseE c e = do
+        w <- W.peekMaybe
+        if w == Just LITTLE_E || w == Just BIG_E
+        then W.skipN 1 >> (Sci.scientific c . (subtract e) <$> signed decimal)
+        else return (Sci.scientific c (negate e))
+    {-# INLINE parseE #-}
 {-# INLINE scientifically #-}

@@ -32,10 +32,9 @@ import System.FilePath ((</>), dropExtension)
 import qualified Data.Attoparsec.Zepto as Z
 import Data.Binary.Get (Get)
 import qualified Data.Binary.Parser as BP
-import qualified Data.Binary.Get as BP
+import qualified Data.Binary.Get as BG
 import qualified Data.Binary.Parser.Word8 as BP
 import qualified Data.Binary.Parser.Numeric as BP
-import qualified Data.Binary.Parser.Char8 as BP (char, string)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B
@@ -47,6 +46,7 @@ import Criterion.Main
 #define CLOSE_CURLY 125
 #define CLOSE_SQUARE 93
 #define COMMA 44
+#define COLON 58
 #define DOUBLE_QUOTE 34
 #define OPEN_CURLY 123
 #define OPEN_SQUARE 91
@@ -136,7 +136,7 @@ object_' = {-# SCC "object_'" #-} do
 objectValues :: Get Text -> Get Value -> Get (H.HashMap Text Value)
 objectValues str val = do
   BP.skipSpaces
-  let pair = liftA2 (,) (str <* BP.skipSpaces) (BP.char ':' *> BP.skipSpaces *> val)
+  let pair = liftA2 (,) (str <* BP.skipSpaces) (BP.word8 COLON *> BP.skipSpaces *> val)
   H.fromList <$> commaSeparated pair CLOSE_CURLY
 {-# INLINE objectValues #-}
 

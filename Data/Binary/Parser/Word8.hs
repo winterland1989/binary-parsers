@@ -2,20 +2,18 @@
 
 module Data.Binary.Parser.Word8 where
 
-import Control.Monad
+import           Control.Monad
 import qualified Data.Binary.Get          as BG
 import           Data.Binary.Get.Internal
-import           Data.Binary.Parser
 import           Data.ByteString          (ByteString)
 import qualified Data.ByteString          as B
+import           Data.ByteString.Internal (ByteString (..), accursedUnutterablePerformIO)
 import qualified Data.ByteString.Unsafe   as B
-import qualified Data.ByteString.Lazy     as L
 import           Data.Word
+import           Foreign.ForeignPtr       (withForeignPtr)
+import           Foreign.Ptr              (minusPtr, plusPtr)
+import qualified Foreign.Storable         as Storable (Storable (peek))
 import           Prelude                  hiding (takeWhile)
-import           Data.ByteString.Internal (ByteString(..), inlinePerformIO)
-import Foreign.Ptr (castPtr, minusPtr, plusPtr)
-import Foreign.ForeignPtr (withForeignPtr)
-import qualified Foreign.Storable as Storable (Storable(peek))
 
 --------------------------------------------------------------------------------
 
@@ -40,11 +38,11 @@ peek = do
 -- >digit = satisfy isDigit
 -- >    where isDigit w = w >= 48 && w <= 57
 satisfy :: (Word8 -> Bool) -> Get Word8
-satisfy pred = do
+satisfy p = do
     ensureN 1
     bs <- get
     let w = B.unsafeHead bs
-    if pred w then put (B.unsafeTail bs) >> return w
+    if p w then put (B.unsafeTail bs) >> return w
               else fail ("satisfy: can't satisfy word8: " ++ show w)
 {-# INLINE satisfy #-}
 
@@ -61,14 +59,14 @@ anyWord8 :: Get Word8
 anyWord8 = BG.getWord8
 {-# INLINE anyWord8 #-}
 
-skip :: (Word8 -> Bool) -> Get ()
-skip pred = do
+skipWord8 :: (Word8 -> Bool) -> Get ()
+skipWord8 p = do
     ensureN 1
     bs <- get
     let w = B.unsafeHead bs
-    if pred w then put (B.unsafeTail bs)
+    if p w then put (B.unsafeTail bs)
               else fail ("skip: can't skip word8: " ++ show w)
-{-# INLINE skip #-}
+{-# INLINE skipWord8 #-}
 
 --------------------------------------------------------------------------------
 
@@ -80,65 +78,75 @@ skipN n = do
 {-# INLINE skipN #-}
 
 takeTill :: (Word8 -> Bool) -> Get ByteString
-takeTill pred = withInputChunks () (consumeUntil pred) B.concat (return . B.concat)
+takeTill p = withInputChunks () (consumeUntil p) B.concat (return . B.concat)
   where
-    consumeUntil pred _ str =
-        let (want, rest) = B.break pred str
+    consumeUntil p' _ str =
+        let (want, rest) = B.break p' str
         in if B.null rest then Left ()
                           else Right (want, rest)
 {-# INLINE takeTill #-}
 
 takeWhile :: (Word8 -> Bool) -> Get ByteString
-takeWhile pred = withInputChunks () (consumeUntil pred) B.concat (return . B.concat)
+takeWhile p = withInputChunks () (consumeUntil p) B.concat (return . B.concat)
   where
-    consumeUntil pred _ str =
-        let (want, rest) = B.span pred str
+    consumeUntil p' _ str =
+        let (want, rest) = B.span p' str
         in if B.null rest then Left ()
                           else Right (want, rest)
 {-# INLINE takeWhile #-}
 
 takeWhile1 :: (Word8 -> Bool) -> Get ByteString
-takeWhile1 pred = do
-    bs <- takeWhile pred
+takeWhile1 p = do
+    bs <- takeWhile p
     if B.null bs then fail "takeWhile1" else return bs
 {-# INLINE takeWhile1 #-}
 
 skipWhile :: (Word8 -> Bool) -> Get ()
-skipWhile pred = withInputChunks () (consumeUntil pred) (const ()) (return . const ())
+skipWhile p = withInputChunks () (consumeUntil p) (const ()) (return . const ())
   where
-    consumeUntil pred _ str =
-        let rest = B.dropWhile pred str
+    consumeUntil p' _ str =
+        let rest = B.dropWhile p' str
         in if B.null rest then Left ()
                           else Right (undefined , rest)
 {-# INLINE skipWhile #-}
 
 skipTill :: (Word8 -> Bool) -> Get ()
-skipTill pred = skipWhile (not . pred)
+skipTill p = skipWhile (not . p)
 {-# INLINE skipTill #-}
 
 skipSpaces :: Get ()
 skipSpaces = skipWhile isSpace
 {-# INLINE skipSpaces #-}
 
+string :: ByteString -> Get ()
+string bs = do
+    let l = B.length bs
+    ensureN l
+    bs' <- get
+    if B.unsafeTake l bs' == bs
+    then put (B.unsafeDrop l bs')
+    else fail ("string not match: " ++ show bs)
+{-# INLINE string #-}
+
 scan :: s -> (s -> Word8 -> Maybe s) -> Get ByteString
-scan s consume = withInputChunks s consume' B.concat (return . B.concat)
+scan s0 consume = withInputChunks s0 consume' B.concat (return . B.concat)
   where
-    consume' s0 (PS fp off len) = inlinePerformIO $
+    consume' s1 (PS fp off len) = accursedUnutterablePerformIO $
         withForeignPtr fp $ \ptr0 -> do
             let start = ptr0 `plusPtr` off
                 end   = start `plusPtr` len
-                go ptr !s
-                    | ptr < end = do
-                        w <- Storable.peek ptr
-                        case consume s w of
-                            Just s' -> go (ptr `plusPtr` 1) s'
-                            _       -> do
-                                let !len1 = ptr `minusPtr` start
-                                    !off2 = off + len1
-                                    !len2 = end `minusPtr` ptr
-                                return (Right (PS fp off len1, PS fp off2 len2))
-                    | otherwise = return (Left s)
-            go start s0
+            go fp off start end start s1
+    go fp off start end ptr !s
+        | ptr < end = do
+            w <- Storable.peek ptr
+            case consume s w of
+                Just s' -> go fp off start end (ptr `plusPtr` 1) s'
+                _       -> do
+                    let !len1 = ptr `minusPtr` start
+                        !off2 = off + len1
+                        !len2 = end `minusPtr` ptr
+                    return (Right (PS fp off len1, PS fp off2 len2))
+        | otherwise = return (Left s)
 {-# INLINE scan #-}
 
 scanChunks :: s -> Consume s -> Get ByteString

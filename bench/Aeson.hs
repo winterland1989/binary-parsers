@@ -357,4 +357,4 @@ aeson = do
   benches <- forM names $ \name -> do
     bs <- B.readFile (path </> name)
     return . bench (dropExtension name) $ nf (A.parseOnly jsonEOF') bs
-  return $ bgroup "aeson" benches
+  return $ bgroup "aeson-attoparsec" benches

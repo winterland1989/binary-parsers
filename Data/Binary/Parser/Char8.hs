@@ -2,19 +2,12 @@ module Data.Binary.Parser.Char8 where
 
 import qualified Data.Binary.Get          as BG
 import           Data.Binary.Get.Internal
-import           Data.Binary.Parser
-import qualified        Data.Binary.Parser.Word8 as W
+import qualified Data.Binary.Parser.Word8 as W
 import           Data.ByteString          (ByteString)
-import           Data.ByteString.Internal (c2w, w2c)
 import qualified Data.ByteString          as B
+import           Data.ByteString.Internal (c2w, w2c)
 import qualified Data.ByteString.Unsafe   as B
-import qualified Data.ByteString.Lazy     as L
-import           Data.Word
 import           Prelude                  hiding (takeWhile)
-
-
---------------------------------------------------------------------------------
-
 
 --------------------------------------------------------------------------------
 
@@ -26,66 +19,43 @@ peek :: Get Char
 peek = w2c <$> W.peek
 {-# INLINE peek #-}
 
--- | The parser @satisfy p@ succeeds for any byte for which the
--- predicate @p@ returns 'True'. Returns the byte that is actually
--- parsed.
---
--- >digit = satisfy isDigit
--- >    where isDigit w = w >= 48 && w <= 57
 satisfy :: (Char -> Bool) -> Get Char
-satisfy pred = w2c <$> W.satisfy (pred . w2c)
+satisfy p = w2c <$> W.satisfy (p . w2c)
 {-# INLINE satisfy #-}
 
 char :: Char -> Get ()
-char c = do
-    ensureN 1
-    bs <- get
-    let w = B.unsafeHead bs
-    if c2w c == w then put (B.unsafeTail bs)
-                  else fail ("word8: can't get char: " ++ show c)
+char c = W.word8 (c2w c)
 {-# INLINE char #-}
 
 anyChar :: Get Char
 anyChar = w2c <$> BG.getWord8
 {-# INLINE anyChar #-}
 
-skip :: (Char -> Bool) -> Get ()
-skip pred = W.skip (pred . w2c)
-{-# INLINE skip #-}
+skipChar :: (Char -> Bool) -> Get ()
+skipChar p = W.skipWord8 (p . w2c)
+{-# INLINE skipChar #-}
 
 --------------------------------------------------------------------------------
 
 takeTill :: (Char -> Bool) -> Get ByteString
-takeTill pred = W.takeTill (pred . w2c)
+takeTill p = W.takeTill (p . w2c)
 {-# INLINE takeTill #-}
 
 takeWhile :: (Char -> Bool) -> Get ByteString
-takeWhile pred = W.takeWhile (pred . w2c)
+takeWhile p = W.takeWhile (p . w2c)
 {-# INLINE takeWhile #-}
 
 takeWhile1 :: (Char -> Bool) -> Get ByteString
-takeWhile1 pred = W.takeWhile1 (pred . w2c)
+takeWhile1 p = W.takeWhile1 (p . w2c)
 {-# INLINE takeWhile1 #-}
 
 skipWhile :: (Char -> Bool) -> Get ()
-skipWhile pred = W.skipWhile (pred . w2c)
+skipWhile p = W.skipWhile (p . w2c)
 {-# INLINE skipWhile #-}
 
 skipTill :: (Char -> Bool) -> Get ()
-skipTill pred = W.skipTill (pred . w2c)
+skipTill p = W.skipTill (p . w2c)
 {-# INLINE skipTill #-}
-
---------------------------------------------------------------------------------
-
-string :: ByteString -> Get ()
-string bs = do
-    let l = B.length bs
-    ensureN l
-    bs' <- get
-    if B.unsafeTake l bs' == bs
-    then put (B.unsafeDrop l bs')
-    else fail ("string not match: " ++ show bs)
-{-# INLINE string #-}
 
 stringCI :: ByteString -> Get ()
 stringCI bs = do
@@ -100,10 +70,6 @@ stringCI bs = do
               | otherwise          = w
 {-# INLINE stringCI #-}
 
-skipSpaces :: Get ()
-skipSpaces = W.skipSpaces
-{-# INLINE skipSpaces #-}
-
 --------------------------------------------------------------------------------
 
 isSpace :: Char -> Bool
@@ -114,3 +80,20 @@ isSpace c = (c == ' ') || ('\t' <= c && c <= '\r')
 isDigit :: Char -> Bool
 isDigit c = c >= '0' && c <= '9'
 {-# INLINE isDigit #-}
+
+-- | HexDigit predicate.
+isHexDigit :: Char -> Bool
+isHexDigit c = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')
+{-# INLINE isHexDigit #-}
+
+-- | A predicate that matches either a space @\' \'@ or horizontal tab
+-- @\'\\t\'@ character.
+isHorizontalSpace :: Char -> Bool
+isHorizontalSpace c = c == ' ' || c == '\t'
+{-# INLINE isHorizontalSpace #-}
+
+-- | A predicate that matches either a carriage return @\'\\r\'@ or
+-- newline @\'\\n\'@ character.
+isEndOfLine :: Char -> Bool
+isEndOfLine c = c == '\r' || c == '\n'
+{-# INLINE isEndOfLine #-}
