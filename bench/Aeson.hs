@@ -4,6 +4,7 @@
 module Aeson
     (
       aeson
+    , aesonLazy
     , value'
     ) where
 
@@ -349,11 +350,18 @@ toByteString :: Builder -> ByteString
 toByteString = L.toStrict . toLazyByteString
 {-# INLINE toByteString #-}
 
-aeson :: IO Benchmark
+aeson :: IO [Benchmark]
 aeson = do
   path <- pathTo "json-data"
   names <- sort . filter (`notElem` [".", ".."]) <$> getDirectoryContents path
-  benches <- forM names $ \name -> do
+  forM names $ \name -> do
     bs <- B.readFile (path </> name)
-    return . bench (dropExtension name) $ nf (A.parseOnly jsonEOF') bs
-  return $ bgroup "aeson-attoparsec" benches
+    return . bench ("attoparsec/" ++ dropExtension name) $ nf (A.parseOnly jsonEOF') bs
+
+aesonLazy :: IO [Benchmark]
+aesonLazy = do
+  path <- pathTo "json-data"
+  names <- sort . filter (`notElem` [".", ".."]) <$> getDirectoryContents path
+  forM names $ \name -> do
+    bs <- L.readFile (path </> name)
+    return . bench ("attoparsec/lazy-bytestring/" ++ dropExtension name) $ nf (L.parse jsonEOF') bs
