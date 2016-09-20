@@ -32,6 +32,27 @@ Benchmark
 ---------
 
 ```
+benchmarking http-req/attoparsec
+time                 2.240 μs   (2.216 μs .. 2.264 μs)
+                     0.998 R²   (0.996 R² .. 0.999 R²)
+mean                 2.320 μs   (2.251 μs .. 2.702 μs)
+std dev              417.9 ns   (60.72 ns .. 1.012 μs)
+variance introduced by outliers: 96% (severely inflated)
+
+benchmarking http-req/binary-parsers
+time                 1.552 μs   (1.533 μs .. 1.577 μs)
+                     0.980 R²   (0.942 R² .. 0.999 R²)
+mean                 1.673 μs   (1.549 μs .. 1.984 μs)
+std dev              583.2 ns   (53.70 ns .. 1.115 μs)
+variance introduced by outliers: 99% (severely inflated)
+
+benchmarking http-req/warp
+time                 903.0 ns   (894.7 ns .. 911.2 ns)
+                     0.999 R²   (0.998 R² .. 0.999 R²)
+mean                 906.6 ns   (896.2 ns .. 918.4 ns)
+std dev              36.38 ns   (28.49 ns .. 51.58 ns)
+variance introduced by outliers: 56% (severely inflated)
+
 Benchmark criterion: RUNNING...
 benchmarking attoparsec/buffer-builder
 time                 4.025 ms   (3.965 ms .. 4.097 ms)

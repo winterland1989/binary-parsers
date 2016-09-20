@@ -38,6 +38,7 @@ import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B
 import qualified Data.HashMap.Strict as H
 import Criterion.Main
+import Common (pathTo)
 
 #define BACKSLASH 92
 #define CLOSE_CURLY 125
@@ -55,13 +56,6 @@ import Criterion.Main
 #define C_f 102
 #define C_n 110
 #define C_t 116
-
-pathTo :: String -> IO FilePath
-pathTo wat = do
-  exists <- doesDirectoryExist "bench"
-  return $ if exists
-           then "bench" </> wat
-           else wat
 
 data Result a = Error String
               | Success a
