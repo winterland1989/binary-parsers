@@ -33,6 +33,7 @@
 -- count == replicateM
 -- atEnd == isEmpty
 -- take == getByteString
+-- many1 == some
 -- @
 --
 -- For fast byte set operations, please use <http://hackage.haskell.org/package/charset charset>
@@ -164,11 +165,11 @@ many' p = many_p
         some_p = liftM2' (:) p many_p
 {-# INLINE many' #-}
 
--- | @many1' p@ applies the action @p@ /one/ or more times. Returns a
+-- | @some' p@ applies the action @p@ /one/ or more times. Returns a
 -- list of the returned values of @p@. The value returned by @p@ is
 -- forced to WHNF.
 --
--- >  word  = many1' letter
+-- >  word  = some' letter
 some' :: (MonadPlus m) => m a -> m [a]
 some' p = liftM2' (:) p (many' p)
 {-# INLINE some' #-}
