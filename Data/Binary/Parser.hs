@@ -10,7 +10,7 @@
 --
 -- This library provide parsec\/attoparsec style parsing combinators for
 -- <http://hackage.haskell.org/package/binary binary>
--- package, by default, this module export combinators in "Data.Binary.Get",
+-- package. By default, this module export combinators in "Data.Binary.Get",
 -- "Data.Binary.Parser.Word8" and "Data.Binary.Numeric", for additional ASCII char parser,
 -- please check "Data.Binary.Parser.Char8" module.
 --
@@ -36,9 +36,7 @@
 -- @
 --
 -- For fast byte set operations, please use <http://hackage.haskell.org/package/charset charset>
--- package.
---
--- If there's anything missing from this package please report!
+-- package. If there's anything missing from this package please report!
 --
 module Data.Binary.Parser
     (

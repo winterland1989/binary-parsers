@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE CPP          #-}
 -- |
 -- Module      :  Data.Binary.Parser.Word8
 -- Copyright   :  Bryan O'Sullivan 2007-2015, Winterland 2016
@@ -17,13 +18,24 @@ import           Data.Binary.Get
 import           Data.Binary.Get.Internal
 import           Data.ByteString          (ByteString)
 import qualified Data.ByteString          as B
-import           Data.ByteString.Internal (ByteString (..), accursedUnutterablePerformIO)
+import           Data.ByteString.Internal (ByteString (..))
 import qualified Data.ByteString.Unsafe   as B
 import           Data.Word
 import           Foreign.ForeignPtr       (withForeignPtr)
 import           Foreign.Ptr              (minusPtr, plusPtr)
 import qualified Foreign.Storable         as Storable (Storable (peek))
 import           Prelude                  hiding (takeWhile)
+
+#if MIN_VERSION_bytestring(0,10,6)
+import Data.ByteString.Internal( accursedUnutterablePerformIO )
+#else
+import Data.ByteString.Internal( inlinePerformIO )
+
+{-# INLINE accursedUnutterablePerformIO #-}
+-- | You must be truly desperate to come to me for help.
+accursedUnutterablePerformIO :: IO a -> a
+accursedUnutterablePerformIO = inlinePerformIO
+#endif
 
 --------------------------------------------------------------------------------
 

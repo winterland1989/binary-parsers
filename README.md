@@ -6,6 +6,8 @@ binary-parsers
 
 This package extends [binary](http://hackage.haskell.org/package/binary) with parsec/attoparsec style parsing combinators. It's useful when you want to deal with various binary format, and it's very fast. You can now write more complex `Binary` instances using comprehensive combinators, with serialisation packages like blaze-texual.
 
+Binary's `Get` monad is designed to perform best on non-backtracking cases, but it still provides fast backtracking support via `Alternative` instance, it's overall an excellent alternative to attoparsec if you only deal with `ByteString`.
+
 Building
 --------
 
@@ -19,16 +21,15 @@ cabal configure --enable-tests --enable-benchmarks
 cabal build
 ```
 
-Run the test suite.
+Run the test suite and benchmarks.
 
 ```
 cabal test
+cabal bench
 ```
 
-Benchmarks
-----------
-
-Run `cabal bench` to Benchmarks, it exceeds attoparsec on every JSON sample.
+Benchmark
+---------
 
 ```
 Benchmark criterion: RUNNING...
