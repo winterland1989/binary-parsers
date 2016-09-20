@@ -3,7 +3,7 @@
 module QC.Combinator where
 
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<*>), (<$>), (<*), (*>))
+import Control.Applicative ((<*>), (<$>), (<*), (*>), pure)
 #endif
 import qualified Control.Monad as M (replicateM)
 import Data.Maybe (fromJust, isJust)
