@@ -148,7 +148,7 @@ takeTill p = do
         put rest
         if B.null rest
         then do
-            e <- isEmpty
+            e <- isEmpty -- isEmpty will draw input here
             if e then return acc' else go acc'
         else return acc'
 {-# INLINE takeTill #-}

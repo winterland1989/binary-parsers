@@ -17,7 +17,6 @@ import Control.Applicative
 #endif
 import Data.Char (isAlpha)
 import Test.QuickCheck
-import Test.QuickCheck.Unicode (shrinkChar, string)
 import Test.QuickCheck.Instances ()
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL

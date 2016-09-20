@@ -6,7 +6,7 @@ import qualified Data.ByteString as B
 import Test.Tasty.HUnit
 import Test.Tasty (TestTree)
 import System.Directory (getDirectoryContents, doesDirectoryExist)
-import System.FilePath ((</>), dropExtension)
+import System.FilePath ((</>))
 import qualified Aeson as A
 import qualified Data.Attoparsec.ByteString as A
 import qualified AesonBP as B

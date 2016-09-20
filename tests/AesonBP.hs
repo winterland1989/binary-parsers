@@ -28,9 +28,6 @@ import System.FilePath ((</>), dropExtension)
 import qualified Data.Attoparsec.Zepto as Z
 import Data.Binary.Get (Get)
 import qualified Data.Binary.Parser as BP
-import qualified Data.Binary.Get as BG
-import qualified Data.Binary.Parser.Word8 as BP
-import qualified Data.Binary.Parser.Numeric as BP
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Unsafe as B

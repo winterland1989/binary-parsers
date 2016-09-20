@@ -137,6 +137,11 @@ scan s (Positive k) = parseBS p s === Just (toStrictBS $ L.take k s)
   where p = P.scan k $ \ n _ ->
             if n > 0 then let !n' = n - 1 in Just n' else Nothing
 
+decimal :: Integer -> Property
+decimal d =
+    let dBS = BB.toLazyByteString $ BB.integerDec d
+    in parseBS (P.signed P.decimal) dBS === Just d
+
 double :: Double -> Property
 double d =
     let dBS = BB.toLazyByteString $ BB.doubleDec d
@@ -170,6 +175,7 @@ tests = [
     , testProperty "takeWhile1" takeWhile1
     , testProperty "takeWhile1_empty" takeWhile1_empty
     , testProperty "word8" word8
+    , testProperty "decimal" decimal
     , testProperty "double" double
     , testProperty "scientific" scientific
   ]
