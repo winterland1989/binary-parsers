@@ -2,7 +2,7 @@
 module QC.ByteString (tests) where
 
 #if !MIN_VERSION_base(4,8,0)
-import Control.Applicative ((<*>), (<$>))
+import Control.Applicative
 #endif
 import Data.Char (chr, ord, toUpper)
 import Data.Int (Int64)
