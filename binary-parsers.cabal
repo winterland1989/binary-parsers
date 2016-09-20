@@ -12,7 +12,7 @@ maintainer:          winterland1989@gmail.com
 -- copyright:           
 category:            Data
 build-type:          Simple
-extra-source-files:  ChangeLog.md
+extra-source-files:  ChangeLog.md, README.md
 cabal-version:       >=1.10
 
 library

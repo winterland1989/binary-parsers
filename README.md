@@ -1,7 +1,29 @@
 binary-parsers
 ==============
 
-This package extends [binary](http://hackage.haskell.org/package/binary) with parsec/attoparsec style parsing combinators. It's useful when you want to deal with various binary format, and it's very fast. You can now write more complex `Binary` instances with comprehensive combinators combine with packages like blaze-texual.
+[![Hackage](https://img.shields.io/hackage/v/binary-parsers.svg?style=flat)](http://hackage.haskell.org/package/binary-parsers)
+[![Build Status](https://travis-ci.org/winterland1989/binary-parsers.svg)](https://travis-ci.org/winterland1989/binary-parsers)
+
+This package extends [binary](http://hackage.haskell.org/package/binary) with parsec/attoparsec style parsing combinators. It's useful when you want to deal with various binary format, and it's very fast. You can now write more complex `Binary` instances using comprehensive combinators, with serialisation packages like blaze-texual.
+
+Building
+--------
+
+binary-parsers comes with a test suite modified from attoparsec, and a JSON parsing benchmarks. Here you go:
+
+```
+git clone https://github.com/winterland1989/binary-parsers.git
+cd binary-parsers
+cabal update
+cabal configure --enable-tests --enable-benchmarks
+cabal build
+```
+
+Run the test suite.
+
+```
+cabal test
+```
 
 Benchmarks
 ----------
