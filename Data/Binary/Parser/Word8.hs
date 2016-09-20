@@ -13,6 +13,7 @@
 --
 module Data.Binary.Parser.Word8 where
 
+import           Control.Applicative
 import           Control.Monad
 import           Data.Binary.Get
 import           Data.Binary.Get.Internal
@@ -27,9 +28,9 @@ import qualified Foreign.Storable         as Storable (Storable (peek))
 import           Prelude                  hiding (takeWhile)
 
 #if MIN_VERSION_bytestring(0,10,6)
-import Data.ByteString.Internal( accursedUnutterablePerformIO )
+import           Data.ByteString.Internal (accursedUnutterablePerformIO)
 #else
-import Data.ByteString.Internal( inlinePerformIO )
+import           Data.ByteString.Internal (inlinePerformIO)
 
 {-# INLINE accursedUnutterablePerformIO #-}
 -- | You must be truly desperate to come to me for help.

@@ -22,6 +22,7 @@
 
 module Data.Binary.Parser.Char8 where
 
+import           Control.Applicative
 import qualified Data.Binary.Get          as BG
 import           Data.Binary.Get.Internal
 import qualified Data.Binary.Parser.Word8 as W
