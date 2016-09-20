@@ -76,7 +76,7 @@ anyChar :: Get Char
 anyChar = w2c <$> BG.getWord8
 {-# INLINE anyChar #-}
 
--- | The parser @skip p@ succeeds for any char for which the predicate @p@ returns 'True'.
+-- | The parser @skipChar p@ succeeds for any char for which the predicate @p@ returns 'True'.
 --
 skipChar :: (Char -> Bool) -> Get ()
 skipChar p = W.skipWord8 (p . w2c)

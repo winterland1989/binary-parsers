@@ -107,7 +107,7 @@ anyWord8 :: Get Word8
 anyWord8 = getWord8
 {-# INLINE anyWord8 #-}
 
--- | The parser @skip p@ succeeds for any byte for which the predicate @p@ returns 'True'.
+-- | The parser @skipWord8 p@ succeeds for any byte for which the predicate @p@ returns 'True'.
 --
 skipWord8 :: (Word8 -> Bool) -> Get ()
 skipWord8 p = do
