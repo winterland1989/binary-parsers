@@ -1,5 +1,15 @@
 {-# LANGUAGE BangPatterns #-}
-
+-- |
+-- Module      :  Data.Binary.Parser.Word8
+-- Copyright   :  Bryan O'Sullivan 2007-2015, Winterland 2016
+-- License     :  BSD3
+--
+-- Maintainer  :  drkoster@qq.com
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- Simple, efficient combinator parsing for 'B.ByteString' strings.
+--
 module Data.Binary.Parser.Word8 where
 
 import           Control.Monad
@@ -17,6 +27,9 @@ import           Prelude                  hiding (takeWhile)
 
 --------------------------------------------------------------------------------
 
+-- | Match any byte, to perform lookahead. Returns 'Nothing' if end of
+-- input has been reached. Does not consume any input.
+--
 peekMaybe :: Get (Maybe Word8)
 peekMaybe = do
     e <- isEmpty
@@ -24,6 +37,9 @@ peekMaybe = do
          else Just <$> peek
 {-# INLINE peekMaybe #-}
 
+-- | Match any byte, to perform lookahead.  Does not consume any
+-- input, but will fail if end of input has been reached.
+--
 peek :: Get Word8
 peek = do
     ensureN 1
@@ -37,6 +53,7 @@ peek = do
 --
 -- >digit = satisfy isDigit
 -- >    where isDigit w = w >= 48 && w <= 57
+--
 satisfy :: (Word8 -> Bool) -> Get Word8
 satisfy p = do
     ensureN 1
@@ -46,6 +63,10 @@ satisfy p = do
               else fail "satisfy"
 {-# INLINE satisfy #-}
 
+-- | The parser @satisfyWith f p@ transforms a byte, and succeeds if
+-- the predicate @p@ returns 'True' on the transformed value. The
+-- parser returns the transformed byte that was parsed.
+--
 satisfyWith :: (Word8 -> a) -> (a -> Bool) -> Get a
 satisfyWith f p = do
     ensureN 1
@@ -56,6 +77,8 @@ satisfyWith f p = do
            else fail "satisfyWith"
 {-# INLINE satisfyWith #-}
 
+-- | Match a specific byte.
+--
 word8 :: Word8 -> Get ()
 word8 c = do
     ensureN 1
@@ -65,10 +88,14 @@ word8 c = do
               else fail "word8"
 {-# INLINE word8 #-}
 
+-- | Match any byte.
+--
 anyWord8 :: Get Word8
 anyWord8 = getWord8
 {-# INLINE anyWord8 #-}
 
+-- | The parser @skip p@ succeeds for any byte for which the predicate @p@ returns 'True'.
+--
 skipWord8 :: (Word8 -> Bool) -> Get ()
 skipWord8 p = do
     ensureN 1
@@ -80,6 +107,8 @@ skipWord8 p = do
 
 --------------------------------------------------------------------------------
 
+-- | This is a faster version of 'skip' for small N (smaller than chunk size).
+--
 skipN :: Int -> Get ()
 skipN n = do
     bs <- get
@@ -88,6 +117,9 @@ skipN n = do
               else put B.empty >> skip (l - n)
 {-# INLINE skipN #-}
 
+-- | Consume input as long as the predicate returns 'False' or reach the end of input,
+-- and return the consumed input.
+--
 takeTill :: (Word8 -> Bool) -> Get ByteString
 takeTill p = do
     bs <- get
@@ -108,6 +140,9 @@ takeTill p = do
         else return acc'
 {-# INLINE takeTill #-}
 
+-- | Consume input as long as the predicate returns 'True' or reach the end of input,
+-- and return the consumed input.
+--
 takeWhile :: (Word8 -> Bool) -> Get ByteString
 takeWhile p = do
     bs <- get
@@ -128,12 +163,17 @@ takeWhile p = do
         else return acc'
 {-# INLINE takeWhile #-}
 
+-- | Similar to 'takeWhile', but requires the predicate to succeed on at least one byte
+-- of input: it will fail if the predicate never returns 'True' or reach the end of input
+--
 takeWhile1 :: (Word8 -> Bool) -> Get ByteString
 takeWhile1 p = do
     bs <- takeWhile p
     if B.null bs then fail "takeWhile1" else return bs
 {-# INLINE takeWhile1 #-}
 
+-- | Skip past input for as long as the predicate returns 'True'.
+--
 skipWhile :: (Word8 -> Bool) -> Get ()
 skipWhile p = do
     bs <- get
@@ -150,14 +190,14 @@ skipWhile p = do
             when (B.null rest) go
 {-# INLINE skipWhile #-}
 
-skipTill :: (Word8 -> Bool) -> Get ()
-skipTill p = skipWhile (not . p)
-{-# INLINE skipTill #-}
-
+-- | Skip over white space using 'isSpace'.
+--
 skipSpaces :: Get ()
 skipSpaces = skipWhile isSpace
 {-# INLINE skipSpaces #-}
 
+-- | @string s@ parses a sequence of bytes that identically match @s@.
+--
 string :: ByteString -> Get ()
 string bs = do
     let l = B.length bs
@@ -168,6 +208,14 @@ string bs = do
     else fail ("string not match: " ++ show bs)
 {-# INLINE string #-}
 
+-- | A stateful scanner.  The predicate consumes and transforms a
+-- state argument, and each transformed state is passed to successive
+-- invocations of the predicate on each byte of the input until one
+-- returns 'Nothing' or the input ends.
+--
+-- This parser does not fail.  It will return an empty string if the
+-- predicate returns 'Nothing' on the first byte of input.
+--
 scan :: s -> (s -> Word8 -> Maybe s) -> Get ByteString
 scan s0 consume = withInputChunks s0 consume' B.concat (return . B.concat)
   where
@@ -189,35 +237,48 @@ scan s0 consume = withInputChunks s0 consume' B.concat (return . B.concat)
         | otherwise = return (Left s)
 {-# INLINE scan #-}
 
+-- | Similar to 'scan', but working on 'ByteString' chunks, The predicate
+-- consumes a 'ByteString' chunk and transforms a state argument,
+-- and each transformed state is passed to successive invocations of
+-- the predicate on each chunk of the input until one chunk got splited to
+-- @Right (ByteString, ByteString)@ or the input ends.
+--
 scanChunks :: s -> Consume s -> Get ByteString
 scanChunks s consume = withInputChunks s consume B.concat (return . B.concat)
 {-# INLINE scanChunks #-}
 
 --------------------------------------------------------------------------------
 
--- | Fast 'Word8' predicate for matching ASCII space characters.
+-- | Fast 'Word8' predicate for matching ASCII space characters
+--
+-- >isSpace w = w == 32 || w - 9 <= 4
+--
 isSpace :: Word8 -> Bool
 isSpace w = w == 32 || w - 9 <= 4
 {-# INLINE isSpace #-}
 
--- | Digit predicate.
+-- | Decimal digit predicate.
+--
 isDigit :: Word8 -> Bool
 isDigit w = w - 48 <= 9
 {-# INLINE isDigit #-}
 
--- | HexDigit predicate.
+-- | Hex digit predicate.
+--
 isHexDigit :: Word8 -> Bool
 isHexDigit w = (w >= 48 && w <= 57) || (w >= 97 && w <= 102) || (w >= 65 && w <= 70)
 {-# INLINE isHexDigit #-}
 
 -- | A predicate that matches either a space @\' \'@ or horizontal tab
 -- @\'\\t\'@ character.
+--
 isHorizontalSpace :: Word8 -> Bool
 isHorizontalSpace w = w == 32 || w == 9
 {-# INLINE isHorizontalSpace #-}
 
 -- | A predicate that matches either a carriage return @\'\\r\'@ or
 -- newline @\'\\n\'@ character.
+--
 isEndOfLine :: Word8 -> Bool
 isEndOfLine w = w == 13 || w == 10
 {-# INLINE isEndOfLine #-}

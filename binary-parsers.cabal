@@ -76,6 +76,7 @@ test-suite tests
                 ,   tasty >= 0.11
                 ,   tasty-quickcheck >= 0.8
                 ,   tasty-hunit >= 0.8
+                ,   quickcheck-instances >= 0.3
                 ,   attoparsec
                 ,   scientific
                 ,   text

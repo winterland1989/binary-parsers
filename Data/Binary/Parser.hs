@@ -1,5 +1,4 @@
 {-# LANGUAGE BangPatterns #-}
-
 -- |
 -- Module      :  Data.Binary.Parser
 -- Copyright   :  Daan Leijen 1999-2001, Bryan O'Sullivan 2007-2015, Winterland 2016
@@ -9,17 +8,47 @@
 -- Stability   :  experimental
 -- Portability :  portable
 --
--- Useful parser combinators, similar to those provided by Parsec.
--- choice -> asum
-
+-- This library provide parsec\/attoparsec style parsing combinators for
+-- <http://hackage.haskell.org/package/binary binary>
+-- package, by default, this module export combinators in "Data.Binary.Get",
+-- "Data.Binary.Parser.Word8" and "Data.Binary.Numeric", for additional ASCII char parser,
+-- please check "Data.Binary.Parser.Char8" module.
+--
+-- The behaviour of parsers here is different to that of the
+-- similarly-named parser in Parsec, as this one is all-or-nothing.
+-- To illustrate the difference, the following parser will fail under
+-- Parsec given an input of @\"for\"@:
+--
+-- >string "foo" <|> string "for"
+--
+-- The reason for its failure is that the first branch is a
+-- partial match, and will consume the letters @\'f\'@ and @\'o\'@
+-- before failing.  In binary-parsers, the above parser will /succeed/ on
+-- that input, because the failed first branch will consume nothing.
+--
+-- There're some redundant combinators get removed, for example:
+--
+-- @
+-- choice == asum
+-- count == replicateM
+-- atEnd == isEmpty
+-- take == getByteString
+-- @
+--
+-- For fast byte set operations, please use <http://hackage.haskell.org/package/charset charset>
+-- package.
+--
+-- If there's anything missing from this package please report!
+--
 module Data.Binary.Parser
-    ( parseOnly
+    (
+    -- * Running parsers
+      Parser
+    , parseOnly
     , parseLazy
-    -- *
+    -- * Combinators
     , (<?>)
     , endOfInput
-    , atEnd
-    -- *
     , option
     , eitherP
     , match
@@ -33,22 +62,33 @@ module Data.Binary.Parser
     , manyTill'
     , skipMany
     , skipMany1
-    -- *
+    -- * Re-exports
     , module Data.Binary.Get
     , module Data.Binary.Parser.Word8
     , module Data.Binary.Parser.Numeric
     ) where
 
-import Data.Binary.Get
-import Control.Applicative
-import Control.Monad
-import qualified Data.ByteString.Lazy as L
-import qualified Data.ByteString as B
-import Data.Binary.Parser.Word8
-import Data.Binary.Parser.Numeric
+import           Control.Applicative
+import           Control.Monad
+import           Data.Binary.Get
+import           Data.Binary.Parser.Numeric
+import           Data.Binary.Parser.Word8
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy       as L
 
 --------------------------------------------------------------------------------
 
+-- | Alias to 'Get' for attoparsec compatibility.
+type Parser a = Get a
+
+-- | Run a parser on 'B.ByteString'.
+--
+-- This function does not force a parser to consume all of its input.
+-- Instead, any residual input will be discarded.  To force a parser
+-- to consume all of its input, use something like this:
+--
+-- @parseOnly (myParser <* endOfInput)@
+--
 parseOnly :: Get a -> B.ByteString -> Either String a
 parseOnly g bs =
     let d = runGetIncremental g
@@ -58,6 +98,9 @@ parseOnly g bs =
         _ -> Left "parseOnly: impossible error!"
 {-# INLINE parseOnly #-}
 
+
+-- | Similar to 'parseOnly', but run a parser on lazy 'L.ByteString'.
+--
 parseLazy :: Get a -> L.ByteString -> Either String a
 parseLazy g lbs =
     let d = runGetIncremental g
@@ -69,19 +112,16 @@ parseLazy g lbs =
 
 --------------------------------------------------------------------------------
 
+-- | Name the parser, in case failure occurs.
 (<?>) :: Get a -> String -> Get a
 (<?>) = flip label
 infix 0 <?>
 {-# INLINE (<?>) #-}
 
--- | alias for 'isEmpty'
-atEnd :: Get Bool
-atEnd = isEmpty
-
 -- | Match only if all input has been consumed.
 endOfInput :: Get ()
 endOfInput = do
-    e <- atEnd
+    e <- isEmpty
     unless e (fail "endOfInput: not meet end yet")
 
 -- | @option x p@ tries to apply action @p@. If @p@ fails without

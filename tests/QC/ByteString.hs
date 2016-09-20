@@ -12,9 +12,12 @@ import QC.Common (ASCII(..), liftOp, parseBS, toStrictBS)
 import Test.Tasty (TestTree)
 import Test.Tasty.QuickCheck (testProperty)
 import Test.QuickCheck
+import qualified Data.Scientific as Sci
+import qualified Data.ByteString.Builder.Scientific as Sci
 import qualified Data.Binary.Parser as P
 import qualified Data.Binary.Parser.Char8 as P8
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Builder as BB
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
@@ -134,6 +137,15 @@ scan s (Positive k) = parseBS p s === Just (toStrictBS $ L.take k s)
   where p = P.scan k $ \ n _ ->
             if n > 0 then let !n' = n - 1 in Just n' else Nothing
 
+double :: Double -> Property
+double d =
+    let dBS = BB.toLazyByteString $ BB.doubleDec d
+    in parseBS P.double dBS === Just d
+
+scientific :: Sci.Scientific -> Property
+scientific sci =
+    let sciBS = BB.toLazyByteString $ Sci.formatScientificBuilder Sci.Generic Nothing sci
+    in parseBS P.scientific sciBS === Just sci
 
 tests :: [TestTree]
 tests = [
@@ -158,4 +170,6 @@ tests = [
     , testProperty "takeWhile1" takeWhile1
     , testProperty "takeWhile1_empty" takeWhile1_empty
     , testProperty "word8" word8
+    , testProperty "double" double
+    , testProperty "scientific" scientific
   ]

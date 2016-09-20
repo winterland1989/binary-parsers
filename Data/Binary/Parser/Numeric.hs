@@ -1,6 +1,15 @@
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE CPP #-}
-
+{-# LANGUAGE CPP          #-}
+-- |
+-- Module      :  Data.Binary.Parser.Numeric
+-- Copyright   :  Bryan O'Sullivan 2007-2015, Winterland 2016
+-- License     :  BSD3
+--
+-- Maintainer  :  drkoster@qq.com
+-- Stability   :  experimental
+-- Portability :  unknown
+--
+-- Simple, efficient combinator parsing for numeric values.
+--
 module Data.Binary.Parser.Numeric where
 
 import           Control.Applicative
@@ -25,6 +34,7 @@ import           Data.Word
 -- @\'a\'@ through @\'f\'@ may be upper or lower case.
 --
 -- This parser does not accept a leading @\"0x\"@ string.
+--
 hexadecimal :: (Integral a, Bits a) => Get a
 hexadecimal = do
     bs <- W.takeWhile1 W.isHexDigit
@@ -44,6 +54,7 @@ hexadecimal = do
 {-# SPECIALISE hexadecimal :: Get Word64 #-}
 
 -- | Parse and decode an unsigned decimal number.
+--
 decimal :: Integral a => Get a
 decimal = do
     bs <- W.takeWhile1 W.isDigit
@@ -62,6 +73,7 @@ decimal = do
 
 -- | Parse a number with an optional leading @\'+\'@ or @\'-\'@ sign
 -- character.
+--
 signed :: Num a => Get a -> Get a
 signed p = p <|> (negate <$> (W.word8 MINUS *> p)) <|> (W.word8 PLUS *> p)
 {-# SPECIALISE signed :: Get Int -> Get Int #-}
@@ -82,6 +94,7 @@ signed p = p <|> (negate <$> (W.word8 MINUS *> p)) <|> (W.word8 PLUS *> p)
 --
 -- In most cases, it is better to use 'double' or 'scientific'
 -- instead.
+--
 rational :: Fractional a => Get a
 rational = scientifically realToFrac
 {-# SPECIALIZE rational :: Get Double #-}
@@ -89,7 +102,7 @@ rational = scientifically realToFrac
 {-# SPECIALIZE rational :: Get Rational #-}
 {-# SPECIALIZE rational :: Get Scientific #-}
 
--- | Parse a rational number.
+-- | Parse a rational number and round to 'Double'.
 --
 -- This parser accepts an optional leading sign character, followed by
 -- at least one decimal digit.  The syntax similar to that accepted by
@@ -116,12 +129,21 @@ rational = scientifically realToFrac
 --
 -- This function does not accept string representations of \"NaN\" or
 -- \"Infinity\".
+--
 double :: Get Double
 double = scientifically Sci.toRealFloat
 
+-- | Parse a scientific number.
+--
+-- The syntax accepted by this parser is the same as for 'double'.
+--
 scientific :: Get Scientific
 scientific = scientifically id
 
+-- | Parse a scientific number and convert to result using a user supply function.
+--
+-- The syntax accepted by this parser is the same as for 'double'.
+--
 scientifically :: (Scientific -> a) -> Get a
 scientifically h = do
     sign <- W.peek

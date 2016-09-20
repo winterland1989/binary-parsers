@@ -18,6 +18,7 @@ import Control.Applicative ((<*>), (<$>))
 import Data.Char (isAlpha)
 import Test.QuickCheck
 import Test.QuickCheck.Unicode (shrinkChar, string)
+import Test.QuickCheck.Instances ()
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.Binary.Parser as P
@@ -42,14 +43,6 @@ toStrictBS = B.concat . BL.toChunks
 
 toLazyBS :: B.ByteString -> BL.ByteString
 toLazyBS = BL.fromChunks . (:[])
-
-instance Arbitrary B.ByteString where
-    arbitrary = B.pack <$> arbitrary
-    shrink = map B.pack . shrink . B.unpack
-
-instance Arbitrary BL.ByteString where
-    arbitrary = repackBS <$> arbitrary <*> arbitrary
-    shrink = map BL.pack . shrink . BL.unpack
 
 newtype ASCII a = ASCII { fromASCII :: a }
                   deriving (Eq, Ord, Show)
