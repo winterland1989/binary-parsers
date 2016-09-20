@@ -9,7 +9,11 @@ maintainer:          drkoster@qq.com
 copyright:           (c) 2016 Winterland       
 category:            Data
 build-type:          Simple
-extra-source-files:  ChangeLog.md, README.md
+extra-source-files:    ChangeLog.md
+                     , README.md
+                     , bench/json-data/*.json
+                     , tests/json-data/*.json
+
 cabal-version:       >=1.10
 homepage:            https://github.com/winterland1989/binary-parsers
 bug-reports:         https://github.com/winterland1989/binary-parsers/issues
@@ -24,8 +28,6 @@ library
                     ,   Data.Binary.Parser.Char8
                     ,   Data.Binary.Parser.Numeric
 
-    -- other-modules:       
-    -- other-extensions:    
     build-depends:      base == 4.*
                     ,   bytestring == 0.10.*
                     ,   binary == 0.8.*
@@ -36,6 +38,8 @@ library
     ghc-options:      -Wall
 
 benchmark criterion
+    other-modules:       Aeson
+                    ,    AesonBP
     build-depends:      base
                     ,   deepseq
                     ,   bytestring
@@ -62,8 +66,11 @@ test-suite tests
   hs-source-dirs: tests .
   main-is:        Main.hs
   other-modules:  QC.ByteString
-                  QC.Combinator
-                  QC.Common
+                , QC.Combinator
+                , QC.Common
+                , Aeson
+                , AesonBP
+                , JSON
 
   default-language: Haskell2010
   ghc-options: -Wall -threaded -rtsopts
