@@ -1,5 +1,5 @@
 name:                binary-parsers
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            Extends binary with parsec/attoparsec style parsing combinators.
 description:         Extends binary with parsec/attoparsec style parsing combinators.
 license:             BSD3
@@ -43,6 +43,9 @@ benchmark criterion
                     ,    AesonBP
                     ,    Common
                     ,    HttpReq
+                    ,    Network.Wai.Handler.Warp.ReadInt
+                    ,    Network.Wai.Handler.Warp.RequestHeader
+
     build-depends:      base
                     ,   deepseq
                     ,   bytestring

@@ -295,3 +295,15 @@ isHorizontalSpace w = w == 32 || w == 9
 isEndOfLine :: Word8 -> Bool
 isEndOfLine w = w == 13 || w == 10
 {-# INLINE isEndOfLine #-}
+
+--------------------------------------------------------------------------------
+
+-- | Match either a single newline byte @\'\\n\'@, or a carriage
+-- return followed by a newline byte @\"\\r\\n\"@.
+endOfLine :: Get ()
+endOfLine = do
+    w <- getWord8
+    case w of
+        10 -> return ()
+        13 -> word8 10
+        _  -> fail "endOfLine"

@@ -112,20 +112,20 @@ rational = scientifically realToFrac
 -- Examples with behaviour identical to 'read', if you feed an empty
 -- continuation to the first result:
 --
--- >double "3"     == Done 3.0 ""
--- >double "3.1"   == Done 3.1 ""
--- >double "3e4"   == Done 30000.0 ""
--- >double "3.1e4" == Done 31000.0, ""
+-- >runGetOrFail double "3"     == Right ("",1,3.0)
+-- >runGetOrFail double "3.1"   == Right ("",3,3.1)
+-- >runGetOrFail double "3e4"   == Right ("",3,30000.0)
+-- >runGetOrFail double "3.1e4" == Right ("",5,31000.0)
 --
 -- Examples with behaviour identical to 'read':
 --
--- >double ".3"    == Fail "input does not start with a digit"
--- >double "e3"    == Fail "input does not start with a digit"
+-- >runGetOrFail double ".3"    == Left (".3",0,"takeWhile1")
+-- >runGetOrFail double "e3"    == Left ("e3",0,"takeWhile1")
 --
 -- Examples of differences from 'read':
 --
--- >double "3.foo" == Done 3.0 ".foo"
--- >double "3e"    == Done 3.0 "e"
+-- >runGetOrFail double "3.foo" == Right (".foo",1,3.0)
+-- >runGetOrFail double "3e"    == Right ("e",1,3.0)
 --
 -- This function does not accept string representations of \"NaN\" or
 -- \"Infinity\".
@@ -154,7 +154,7 @@ scientifically h = do
                    intPart' = intPart * (10 ^ B.length fracDigits)
                    fracPart = LexInt.readDecimal_ fracDigits
                parseE (intPart' + fracPart) e'
-           ) <|> (pure (Sci.scientific intPart 0))
+           ) <|> (parseE intPart 0)
 
     if sign /= MINUS then return $! h sci else return $! h (negate sci)
   where

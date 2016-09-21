@@ -126,7 +126,7 @@ endOfInput s = parseBS P.endOfInput s === if L.null s
 
 endOfLine :: L.ByteString -> Property
 endOfLine s =
-  case (parseBS (P.satisfy P.isEndOfLine) s, L8.uncons s) of
+  case (parseBS P.endOfLine s, L8.uncons s) of
     (Nothing, mcs) -> maybe (property True) (expectFailure . eol) mcs
     (Just _,  mcs) -> maybe (property False) eol mcs
   where eol (c,s') = c === '\n' .||.

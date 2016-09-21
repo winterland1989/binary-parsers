@@ -53,7 +53,6 @@ mean                 906.6 ns   (896.2 ns .. 918.4 ns)
 std dev              36.38 ns   (28.49 ns .. 51.58 ns)
 variance introduced by outliers: 56% (severely inflated)
 
-Benchmark criterion: RUNNING...
 benchmarking attoparsec/buffer-builder
 time                 4.025 ms   (3.965 ms .. 4.097 ms)
                      0.998 R²   (0.997 R² .. 0.999 R²)
