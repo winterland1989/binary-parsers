@@ -65,7 +65,7 @@ bpHeader = do
                   || ('0' <= c && c <= '0')
                   || c == '_' || c == '-'
 
-bpBodyLine = BPC.takeTill (\c -> c == '\r' || c == '\n') <* BP.satisfy BP.isEndOfLine
+bpBodyLine = BPC.takeTill (\c -> c == '\r' || c == '\n') <* BP.endOfLine
 
 bpReqLine = do
   m <- (BPC.takeTill BPC.isSpace <* BPC.char ' ')
@@ -75,7 +75,7 @@ bpReqLine = do
 
 bpHttpVersion = http11 <$ BP.string "HTTP/1.1"
 
-bpRequest = (,) <$> (bpReqLine <* BP.satisfy BP.isEndOfLine) <*> bpManyHeader
+bpRequest = (,) <$> (bpReqLine <* BP.endOfLine) <*> bpManyHeader
 
 bpManyHeader = do
   c <- BPC.peek

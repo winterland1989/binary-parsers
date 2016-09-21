@@ -214,11 +214,17 @@ skipSpaces = skipWhile isSpace
 string :: ByteString -> Get ()
 string bs = do
     let l = B.length bs
-    ensureN l
     bs' <- get
-    if B.unsafeTake l bs' == bs
-    then put (B.unsafeDrop l bs')
-    else fail ("string not match: " ++ show bs)
+    if l <= B.length bs'              -- current chunk is enough
+    then if B.unsafeTake l bs' == bs
+        then put (B.unsafeDrop l bs')
+        else fail "string"
+    else do
+        ensureN l
+        bs'' <- get
+        if B.unsafeTake l bs'' == bs
+        then put (B.unsafeDrop l bs'')
+        else fail "string"
 {-# INLINE string #-}
 
 -- | A stateful scanner.  The predicate consumes and transforms a
