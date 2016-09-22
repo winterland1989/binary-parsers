@@ -4,6 +4,7 @@
 
 * Add `parse`,`parseDetail`, `parseDetailLazy`.
 * Reduce these running functions' overhead so that binary performs well on small getters now.
+* Add scanner to benchmarks.
 
 ## 0.2.0.0  -- 2016-09-21
 
