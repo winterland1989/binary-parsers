@@ -167,7 +167,7 @@ parseDetailLazy g L.Empty =
 -- /Since: 0.2.1.0/
 --
 parse :: Get a -> B.ByteString -> Decoder a
-parse g bs = calculateOffset (loop (I.runCont g bs I.Done)) 0
+parse g bs = calculateOffset (loop (I.runCont g bs I.Done)) (fromIntegral $ B.length bs)
   where
     calculateOffset r !acc = case r of
         I.Done inp a -> Done inp (acc - fromIntegral (B.length inp)) a
