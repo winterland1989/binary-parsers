@@ -1,5 +1,10 @@
 # Revision history for binary-parsec
 
+## 0.2.1.0  -- 2016-09-21
+
+* Add `parse`,`parseDetail`, `parseDetailLazy`.
+* Reduce these running functions' overhead so that binary performs well on small getters now.
+
 ## 0.2.0.0  -- 2016-09-21
 
 * Add `endOfLine` combinator.
