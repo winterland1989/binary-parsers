@@ -37,7 +37,11 @@
 -- @
 --
 -- For fast byte set operations, please use <http://hackage.haskell.org/package/charset charset>
--- package. If there's anything missing from this package please report!
+-- package.
+--
+-- It's recommanded to use 'parseOnly', 'parseDetail'... functions to run your parsers since these
+-- functions are faster than binary's counter part by avoiding a small constant overhead.
+-- Check 'parse' for detail.
 --
 module Data.Binary.Parser
     (
@@ -45,6 +49,9 @@ module Data.Binary.Parser
       Parser
     , parseOnly
     , parseLazy
+    , parseDetail
+    , parseDetailLazy
+    , parse
     -- * Combinators
     , (<?>)
     , endOfInput
@@ -70,10 +77,12 @@ module Data.Binary.Parser
 import           Control.Applicative
 import           Control.Monad
 import           Data.Binary.Get
+import qualified Data.Binary.Get.Internal   as I
 import           Data.Binary.Parser.Numeric
 import           Data.Binary.Parser.Word8
 import qualified Data.ByteString            as B
 import qualified Data.ByteString.Lazy       as L
+import qualified Data.ByteString.Lazy.Internal as L (ByteString(..))
 
 --------------------------------------------------------------------------------
 
@@ -90,24 +99,96 @@ type Parser a = Get a
 --
 parseOnly :: Get a -> B.ByteString -> Either String a
 parseOnly g bs =
-    let d = runGetIncremental g
-    in case pushEndOfInput (pushChunk d bs) of
+    case pushEndOfInput (parse g bs) of
         Fail _ _ err -> Left err
         Done _ _ a -> Right a
-        _ -> Left "parseOnly: impossible error!"
+        _ -> error "parseOnly: impossible error!"
 {-# INLINE parseOnly #-}
 
 
 -- | Similar to 'parseOnly', but run a parser on lazy 'L.ByteString'.
 --
 parseLazy :: Get a -> L.ByteString -> Either String a
-parseLazy g lbs =
-    let d = runGetIncremental g
-    in case pushEndOfInput (pushChunks d lbs) of
+parseLazy g (L.Chunk bs lbs) =
+    case pushEndOfInput (pushChunks (parse g bs) lbs) of
         Fail _ _ err -> Left err
         Done _ _ a -> Right a
-        _ -> Left "parseOnly: impossible error!"
+        _ -> error "parseOnly: impossible error!"
+parseLazy g L.Empty =
+    case pushEndOfInput (parse g B.empty) of
+        Fail _ _ err -> Left err
+        Done _ _ a -> Right a
+        _ -> error "parseOnly: impossible error!"
 {-# INLINE parseLazy #-}
+
+-- | Run a parser on 'B.ByteString'.
+--
+-- This function return full parsing results: the rest of input, stop offest and fail
+-- message or parsing result.
+--
+-- /Since: 0.2.1.0/
+--
+parseDetail :: Get a
+            -> B.ByteString
+            -> Either (B.ByteString, ByteOffset, String) (B.ByteString, ByteOffset, a)
+parseDetail g bs =
+    case pushEndOfInput (parse g bs) of
+        Fail rest offset err -> Left (rest, offset, err)
+        Done rest offset a   -> Right (rest, offset, a)
+        _ -> error "parseOnly: impossible error!"
+{-# INLINE parseDetail #-}
+
+-- | Similar to 'parseDetail', but run a parser on lazy 'L.ByteString'.
+--
+-- /Since: 0.2.1.0/
+--
+parseDetailLazy :: Get a
+                -> L.ByteString
+                -> Either (B.ByteString, ByteOffset, String) (B.ByteString, ByteOffset, a)
+parseDetailLazy g (L.Chunk bs lbs) =
+    case pushEndOfInput (pushChunks (parse g bs) lbs) of
+        Fail rest offset err -> Left (rest, offset, err)
+        Done rest offset a   -> Right (rest, offset, a)
+        _ -> error "parseOnly: impossible error!"
+parseDetailLazy g L.Empty =
+    case pushEndOfInput (parse g B.empty) of
+        Fail rest offset err -> Left (rest, offset, err)
+        Done rest offset a   -> Right (rest, offset, a)
+        _ -> error "parseOnly: impossible error!"
+{-# INLINE parseDetailLazy #-}
+
+-- | Run a 'Get' monad. See 'Decoder' for what to do next, like providing
+-- input, handling decoding errors and to get the output value.
+--
+-- This's faster than 'runGetIncremental' becuase it provides an initial chunk rather
+-- than feeding 'B.empty' and waiting for chunks, this overhead is noticeable when you're
+-- running small getters over short 'ByteString' s.
+--
+-- /Since: 0.2.1.0/
+--
+parse :: Get a -> B.ByteString -> Decoder a
+parse g bs = calculateOffset (loop (I.runCont g bs I.Done)) 0
+  where
+    calculateOffset r !acc = case r of
+        I.Done inp a -> Done inp (acc - fromIntegral (B.length inp)) a
+        I.Fail inp s -> Fail inp (acc - fromIntegral (B.length inp)) s
+        I.Partial k -> Partial $ \ms -> case ms of
+                Nothing -> calculateOffset (k Nothing) acc
+                Just i -> calculateOffset (k ms) (acc + fromIntegral (B.length i))
+        I.BytesRead unused k -> calculateOffset (k $! (acc - unused)) acc
+
+    loop r = case r of
+        I.Partial k -> I.Partial $ \ms -> case ms of Just _ -> loop (k ms)
+                                                     Nothing -> completeLoop (k ms)
+        I.BytesRead n k -> I.BytesRead n (loop . k)
+        I.Done _ _ -> r
+        I.Fail _ _ -> r
+
+    completeLoop r = case r of
+        I.Partial k -> completeLoop (k Nothing)
+        I.BytesRead n k -> I.BytesRead n (completeLoop . k)
+        I.Fail _ _ -> r
+        I.Done _ _ -> r
 
 --------------------------------------------------------------------------------
 
