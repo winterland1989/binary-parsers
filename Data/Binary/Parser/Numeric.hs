@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP          #-}
+{-# LANGUAGE MultiWayIf   #-}
 -- |
 -- Module      :  Data.Binary.Parser.Numeric
 -- Copyright   :  Bryan O'Sullivan 2007-2015, Winterland 2016
@@ -75,7 +76,11 @@ decimal = do
 -- character.
 --
 signed :: Num a => Get a -> Get a
-signed p = p <|> (negate <$> (W.word8 MINUS *> p)) <|> (W.word8 PLUS *> p)
+signed p = do
+    w <- W.peek
+    if  | w == MINUS -> W.skipN 1 >> negate <$> p
+        | w == PLUS  -> W.skipN 1 >> p
+        | otherwise  -> p
 {-# SPECIALISE signed :: Get Int -> Get Int #-}
 {-# SPECIALISE signed :: Get Int8 -> Get Int8 #-}
 {-# SPECIALISE signed :: Get Int16 -> Get Int16 #-}
