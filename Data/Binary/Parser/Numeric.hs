@@ -40,7 +40,7 @@ hexadecimal = do
     bs <- W.takeWhile1 W.isHexDigit
     case LexInt.readHexadecimal bs of
         Just (x, _) -> return x
-        Nothing -> fail "decimal: impossible"
+        Nothing -> fail "hexadecimal: impossible"
 {-# SPECIALISE hexadecimal :: Get Int #-}
 {-# SPECIALISE hexadecimal :: Get Int8 #-}
 {-# SPECIALISE hexadecimal :: Get Int16 #-}
@@ -58,7 +58,7 @@ hexadecimal = do
 decimal :: Integral a => Get a
 decimal = do
     bs <- W.takeWhile1 W.isDigit
-    return (LexInt.readDecimal_ bs)
+    return $! LexInt.readDecimal_ bs
 {-# SPECIALISE decimal :: Get Int #-}
 {-# SPECIALISE decimal :: Get Int8 #-}
 {-# SPECIALISE decimal :: Get Int16 #-}
