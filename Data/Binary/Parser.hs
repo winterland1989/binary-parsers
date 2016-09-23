@@ -43,6 +43,30 @@
 -- functions are faster than binary's counter part by avoiding a small constant overhead.
 -- Check 'parse' for detail.
 --
+-- = A few words on performance and backtracking:
+--
+-- There's a common belief that parsers which support backtracking are slow, but it's not neccessarily
+-- true in binary, because binary doesn't do book keeping if you doesn't use '<|>', 'lookAhead' or their
+-- friends. Combinators in this library like 'peek', 'string'... also try to avoid backtracking so
+-- it's faster to use them rather than do backtracking yourself, for example, 'peek' is faster than
+-- @'lookAhead' 'getWord8'@. In practice, protocols are often designed to avoid backtracking.
+-- For example, if you have following parser:
+--
+-- >branch1 <|> branch2 <|> (skipN 1 >> branch3)
+--
+-- And if you can select the right branch just with one byte look ahead, then you should rewrite it to:
+--
+-- @
+-- w <- peek
+-- if  | w == b1 -> branch1
+--     | w == b2 -> branch2
+--     | w == b3 -> skipN 1 >> branch3
+-- @
+--
+-- Binary will perform as fast as a non-backtracking parser as long as you construct your parser
+-- without using backtracking. And sometime backtracking is indeed neccessary, for example 'scientifically'
+-- is almost impossible to implement correctly if you don't do backtracking.
+--
 module Data.Binary.Parser
     (
     -- * Running parsers
