@@ -102,7 +102,15 @@ scHeader = do
         bs <- SC.takeWhile p
         if BC.null bs then fail "takeWhile1" else return bs
 
-scBodyLine = SC.takeWhile (\w -> let c = w2c w in c /= '\r' && c /= '\n') <* SC.char8 '\n'
+scEndOfLine = do        -- scanner doesn't provide endOfLine, so we roll one here
+    w <- SC.anyWord8
+    case w of
+        10 -> return ()
+        13 -> SC.word8 10
+        _  -> fail "endOfLine"
+{-# INLINE scEndOfLine #-}
+
+scBodyLine = SC.takeWhile (\w -> let c = w2c w in c /= '\r' && c /= '\n') <* scEndOfLine
 
 scReqLine = do
   m <- (SC.takeWhile (not . BP.isSpace) <* SC.char8 ' ')
@@ -112,7 +120,7 @@ scReqLine = do
 
 scHttpVersion = http11 <$ SC.string "HTTP/1.1"
 
-scRequest = (,) <$> (scReqLine <* SC.char8 '\n') <*> scManyHeader
+scRequest = (,) <$> (scReqLine <* scEndOfLine) <*> scManyHeader
 
 scManyHeader = do
   w <- SC.lookAhead

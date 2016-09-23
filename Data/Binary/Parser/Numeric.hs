@@ -109,23 +109,20 @@ rational = scientifically realToFrac
 -- the 'read' function, with the exception that a trailing @\'.\'@ or
 -- @\'e\'@ /not/ followed by a number is not consumed.
 --
--- Examples with behaviour identical to 'read', if you feed an empty
--- continuation to the first result:
---
--- >runGetOrFail double "3"     == Right ("",1,3.0)
--- >runGetOrFail double "3.1"   == Right ("",3,3.1)
--- >runGetOrFail double "3e4"   == Right ("",3,30000.0)
--- >runGetOrFail double "3.1e4" == Right ("",5,31000.0)
---
 -- Examples with behaviour identical to 'read':
 --
--- >runGetOrFail double ".3"    == Left (".3",0,"takeWhile1")
--- >runGetOrFail double "e3"    == Left ("e3",0,"takeWhile1")
+-- >parseOnly double "3"     == Right ("",1,3.0)
+-- >parseOnly double "3.1"   == Right ("",3,3.1)
+-- >parseOnly double "3e4"   == Right ("",3,30000.0)
+-- >parseOnly double "3.1e4" == Right ("",5,31000.0)
+--
+-- >parseOnly double ".3"    == Left (".3",0,"takeWhile1")
+-- >parseOnly double "e3"    == Left ("e3",0,"takeWhile1")
 --
 -- Examples of differences from 'read':
 --
--- >runGetOrFail double "3.foo" == Right (".foo",1,3.0)
--- >runGetOrFail double "3e"    == Right ("e",1,3.0)
+-- >parseOnly double "3.foo" == Right (".foo",1,3.0)
+-- >parseOnly double "3e"    == Right ("e",1,3.0)
 --
 -- This function does not accept string representations of \"NaN\" or
 -- \"Infinity\".

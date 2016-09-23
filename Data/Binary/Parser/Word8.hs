@@ -73,7 +73,7 @@ satisfy p = do
     bs <- get
     let w = B.unsafeHead bs
     if p w then put (B.unsafeTail bs) >> return w
-              else fail "satisfy"
+           else fail "satisfy"
 {-# INLINE satisfy #-}
 
 -- | The parser @satisfyWith f p@ transforms a byte, and succeeds if
@@ -161,19 +161,18 @@ takeWhile p = do
     bs <- get
     let (want, rest) = B.span p bs
     put rest
-    if B.null rest then B.concat . reverse <$> go [want]
-                   else return want
+    if B.null rest then B.concat . reverse <$> go [want] else return want
   where
     go acc = do
-        bs <- get
-        let (want, rest) = B.span p bs
-            acc' = want : acc
-        put rest
-        if B.null rest
-        then do
-            e <- isEmpty
-            if e then return acc' else go acc'
-        else return acc'
+        e <- isEmpty
+        if e
+        then return acc
+        else do
+            bs <- get
+            let (want, rest) = B.span p bs
+                acc' = want : acc
+            put rest
+            if B.null rest then go acc' else return acc'
 {-# INLINE takeWhile #-}
 
 -- | Similar to 'takeWhile', but requires the predicate to succeed on at least one byte
@@ -313,3 +312,4 @@ endOfLine = do
         10 -> return ()
         13 -> word8 10
         _  -> fail "endOfLine"
+{-# INLINE endOfLine #-}
