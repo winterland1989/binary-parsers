@@ -138,19 +138,18 @@ takeTill p = do
     bs <- get
     let (want, rest) = B.break p bs
     put rest
-    if B.null rest then B.concat . reverse <$> go [want]
-                   else return want
+    if B.null rest then B.concat . reverse <$> go [want] else return want
   where
     go acc = do
-        bs <- get
-        let (want, rest) = B.break p bs
-            acc' = want : acc
-        put rest
-        if B.null rest
-        then do
-            e <- isEmpty -- isEmpty will draw input here
-            if e then return acc' else go acc'
-        else return acc'
+        e <- isEmpty -- isEmpty will draw input here
+        if e
+        then return acc
+        else do
+            bs <- get
+            let (want, rest) = B.break p bs
+                acc' = want : acc
+            put rest
+            if B.null rest then go acc' else return acc'
 {-# INLINE takeTill #-}
 
 -- | Consume input as long as the predicate returns 'True' or reach the end of input,

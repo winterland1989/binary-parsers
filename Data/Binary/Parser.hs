@@ -43,7 +43,7 @@
 -- functions are faster than binary's counter part by avoiding a small constant overhead.
 -- Check 'parse' for detail.
 --
--- = A few words on performance and backtracking:
+-- = A few words on performance and backtracking
 --
 -- There's a common belief that parsers which support backtracking are slow, but it's not neccessarily
 -- true in binary, because binary doesn't do book keeping if you doesn't use '<|>', 'lookAhead' or their
@@ -54,7 +54,7 @@
 --
 -- >branch1 <|> branch2 <|> (skipN 1 >> branch3)
 --
--- And if you can select the right branch just with one byte look ahead, then you should rewrite it to:
+-- And if you can select the right branch just by looking ahead one byte, then you can rewrite it to:
 --
 -- @
 -- w <- peek
@@ -63,7 +63,7 @@
 --     | w == b3 -> skipN 1 >> branch3
 -- @
 --
--- Binary will perform as fast as a non-backtracking parser as long as you construct your parser
+-- Binary performs as fast as a non-backtracking parser as long as you construct your parser
 -- without using backtracking. And sometime backtracking is indeed neccessary, for example 'scientifically'
 -- is almost impossible to implement correctly if you don't do backtracking.
 --

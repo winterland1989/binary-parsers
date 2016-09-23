@@ -1,8 +1,8 @@
 # Revision history for binary-parsec
 
-## 0.2.1.1  -- 2016-09-21
+## 0.2.2.0  -- 2016-09-21
 
-* Minor optimization to 'takeWhile', 'signed'.
+* Minor optimization to 'takeTill', 'takeWhile' and 'signed'.
 * Add documents on backtracking.
 
 ## 0.2.1.0  -- 2016-09-21
