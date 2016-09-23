@@ -120,7 +120,7 @@ stringCI bs = do
     bs' <- B.unsafeTake l <$> get
     if B.map toLower bs' == B.map toLower bs
     then put (B.unsafeDrop l bs') >> return bs'
-    else fail ("string not match: " ++ show bs)
+    else fail "stringCI"
   where
     toLower w | w >= 65 && w <= 90 = w + 32
               | otherwise          = w

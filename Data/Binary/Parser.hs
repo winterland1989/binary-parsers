@@ -226,7 +226,8 @@ infix 0 <?>
 endOfInput :: Get ()
 endOfInput = do
     e <- isEmpty
-    unless e (fail "endOfInput: not meet end yet")
+    unless e (fail "endOfInput")
+{-# INLINE endOfInput #-}
 
 -- | @option x p@ tries to apply action @p@. If @p@ fails without
 -- consuming input, it returns the value @x@, otherwise the value
@@ -249,6 +250,7 @@ match p = do
     pos1 <- bytesRead
     (x, pos2) <- lookAhead $ (,) <$> p <*> bytesRead
     (,) <$> (getByteString . fromIntegral) (pos2 - pos1) <*> pure x
+{-# INLINE match #-}
 
 -- | A version of 'liftM2' that is strict in the result of its first
 -- action.
