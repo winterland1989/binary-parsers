@@ -76,6 +76,9 @@ module Data.Binary.Parser
     , parseDetail
     , parseDetailLazy
     , parse
+    -- * Decoder conversion
+    , maybeDecoder
+    , eitherDecoder
     -- * Combinators
     , (<?>)
     , endOfInput
@@ -213,6 +216,29 @@ parse g bs = calculateOffset (loop (I.runCont g bs I.Done)) (fromIntegral $ B.le
         I.BytesRead n k -> I.BytesRead n (completeLoop . k)
         I.Fail _ _ -> r
         I.Done _ _ -> r
+
+--------------------------------------------------------------------------------
+
+-- | Convert a 'Decoder' value to a 'Maybe' value. A 'Partial' result
+-- is treated as failure.
+--
+-- /Since: 0.2.3.0/
+--
+maybeDecoder :: Decoder r -> Maybe r
+maybeDecoder (Done _ _ r) = Just r
+maybeDecoder _            = Nothing
+{-# INLINE maybeDecoder #-}
+
+-- | Convert a 'Decoder' value to an 'Either' value. A 'Partial'
+-- result is treated as failure.
+--
+-- /Since: 0.2.3.0/
+--
+eitherDecoder :: Decoder r -> Either String r
+eitherDecoder (Done _ _ r)   = Right r
+eitherDecoder (Fail _ _ msg) = Left msg
+eitherDecoder _              = Left "Decoder: incomplete input"
+{-# INLINE eitherDecoder #-}
 
 --------------------------------------------------------------------------------
 
