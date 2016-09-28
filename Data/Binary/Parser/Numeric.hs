@@ -1,5 +1,4 @@
 {-# LANGUAGE CPP          #-}
-{-# LANGUAGE MultiWayIf   #-}
 -- |
 -- Module      :  Data.Binary.Parser.Numeric
 -- Copyright   :  Bryan O'Sullivan 2007-2015, Winterland 2016
@@ -78,9 +77,9 @@ decimal = do
 signed :: Num a => Get a -> Get a
 signed p = do
     w <- W.peek
-    if  | w == MINUS -> W.skipN 1 >> negate <$> p
-        | w == PLUS  -> W.skipN 1 >> p
-        | otherwise  -> p
+    if w == MINUS
+        then W.skipN 1 >> negate <$> p
+        else if w == PLUS then W.skipN 1 >> p else p
 {-# SPECIALISE signed :: Get Int -> Get Int #-}
 {-# SPECIALISE signed :: Get Int8 -> Get Int8 #-}
 {-# SPECIALISE signed :: Get Int16 -> Get Int16 #-}
@@ -153,7 +152,7 @@ scientifically h = do
     intPart <- decimal
     sci <- (do fracDigits <- W.word8 DOT >> W.takeWhile1 W.isDigit
                let e' = B.length fracDigits
-                   intPart' = intPart * (10 ^ B.length fracDigits)
+                   intPart' = intPart * (10 ^ e')
                    fracPart = LexInt.readDecimal_ fracDigits
                parseE (intPart' + fracPart) e'
            ) <|> (parseE intPart 0)
