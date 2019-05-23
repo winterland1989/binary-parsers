@@ -126,8 +126,8 @@ skipN :: Int -> Get ()
 skipN n = do
     bs <- get
     let l = B.length bs
-    if l >= n then put (B.unsafeDrop n bs)
-              else put B.empty >> skip (l - n)
+    if l > n then put (B.unsafeDrop n bs)
+             else skip n
 {-# INLINE skipN #-}
 
 -- | Consume input as long as the predicate returns 'False' or reach the end of input,
