@@ -22,13 +22,19 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.ByteString.Lazy as L
 import qualified Data.ByteString.Lazy.Char8 as L8
 
+newtype ASCIIChar = ASCIIChar Char
+    deriving (Eq, Ord, Show, Read)
+instance Arbitrary ASCIIChar where
+    arbitrary = ASCIIChar <$> choose ('\0', '\127')
+    shrink (ASCIIChar c) = ASCIIChar <$> shrink c
+
 -- Basic byte-level combinators.
 
 satisfy :: Word8 -> L.ByteString -> Property
 satisfy w s = parseBS (P.satisfy (<=w)) (L.cons w s) === Just w
 
-satisfyWith :: Char -> L.ByteString -> Property
-satisfyWith c s = parseBS (P.satisfyWith (chr . fromIntegral) (<=c))
+satisfyWith :: ASCIIChar -> L.ByteString -> Property
+satisfyWith (ASCIIChar c) s = parseBS (P.satisfyWith (chr . fromIntegral) (<=c))
                          (L.cons (fromIntegral (ord c)) s) === Just c
 
 word8 :: Word8 -> L.ByteString -> Property
